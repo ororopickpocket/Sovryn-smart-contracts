@@ -24,6 +24,8 @@ contract LoanTokenSettingsLowerAdmin is AdvancedToken {
 	//Add new variables here on the bottom
 	address public earlyAccessToken;
 	address public pauser;
+	address public arbitraryCallerAddress; //a universal delegate caller, used for flash borrowing
+	mapping(address => bool) public flashLoanWhiteList; //#123 whitelist flashloans
 
 	event SetEarlyAccessToken(address oldValue, address newValue);
 
@@ -38,7 +40,24 @@ contract LoanTokenSettingsLowerAdmin is AdvancedToken {
 		_;
 	}
 
+	modifier onlyFlashLoanWhiteListed(address account) {
+		require(flashLoanWhiteList[account], "account is not whitelisted for flash loans");
+		_;
+	}
+
 	event SetTransactionLimits(address[] addresses, uint256[] limits);
+
+	function setArbitraryCallerAddress(address caller) public onlyAdmin {
+		arbitraryCallerAddress = caller;
+	}
+
+	function addToFlashLoanWhiteList(address addressToAdd) public onlyAdmin {
+		flashLoanWhiteList[addressToAdd] = true;
+	}
+
+	function removeFromFlashLoanWhiteList(address addressToAdd) public onlyAdmin {
+		delete flashLoanWhiteList[addressToAdd];
+	}
 
 	function setAdmin(address _admin) public onlyOwner {
 		admin = _admin;

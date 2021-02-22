@@ -6,7 +6,9 @@ __pycache__
 build/
 reports/
 node_modules/
+node_modules
 ignore/
+.*
 !.gitignore
 !.gitattributes
 !.solhint.json
@@ -22,4 +24,7 @@ coverage.json
 .vscode
 yarn.lock
 solc-select
+artifacts
+cache
 .idea/
+workspace.code-workspace

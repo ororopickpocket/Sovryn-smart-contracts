@@ -35,7 +35,7 @@ def main():
 
     thisNetwork = network.show_active()
 
-    if thisNetwork == "development":
+    if thisNetwork == "development" or thisNetwork == "ganache":
         acct = accounts[0]
     elif thisNetwork == "testnet" or thisNetwork == "rsk-mainnet":
         acct = accounts.load("rskdeployer")

@@ -13,4 +13,12 @@ contract FeesEvents {
 	event PayBorrowingFee(address indexed payer, address indexed token, bytes32 indexed loanId, uint256 amount);
 
 	event EarnReward(address indexed receiver, address indexed token, bytes32 indexed loanId, uint256 amount);
+
+	/*event PayTradingFeeToAffiliate(
+		address indexed payer,
+		address indexed affiliateReferrer,
+		address indexed token,
+		bytes32 loanId,
+		uint256 amount
+	);*/
 }

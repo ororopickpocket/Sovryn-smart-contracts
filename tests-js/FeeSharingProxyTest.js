@@ -16,7 +16,8 @@ const ProtocolSettings = artifacts.require("ProtocolSettingsMockup");
 const LoanMaintenance = artifacts.require("LoanMaintenance");
 const LoanSettings = artifacts.require("LoanSettings");
 const LoanOpenings = artifacts.require("LoanOpenings");
-const LoanClosings = artifacts.require("LoanClosings");
+const LoanClosingsBase = artifacts.require("LoanClosingsBase");
+const LoanClosingsWith = artifacts.require("LoanClosingsWith");
 
 const LoanTokenLogic = artifacts.require("LoanTokenLogicStandard");
 const LoanTokenSettings = artifacts.require("LoanTokenSettingsLowerAdmin");
@@ -71,8 +72,10 @@ contract("FeeSharingProxy:", (accounts) => {
 		await protocol.replaceContract(loanSettings.address);
 		let loanOpenings = await LoanOpenings.new();
 		await protocol.replaceContract(loanOpenings.address);
-		let loanClosings = await LoanClosings.new();
-		await protocol.replaceContract(loanClosings.address);
+		let loanClosingsBase = await LoanClosingsBase.new();
+		await protocol.replaceContract(loanClosingsBase.address);
+		let loanClosingsWith = await LoanClosingsWith.new();
+		await protocol.replaceContract(loanClosingsWith.address);
 
 		protocol = await ProtocolSettings.at(protocol.address);
 		//Loan token

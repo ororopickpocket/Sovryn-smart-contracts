@@ -56,4 +56,6 @@ contract ProtocolSettingsEvents {
 	event SetRolloverBaseReward(address indexed sender, uint256 oldValue, uint256 newValue);
 
 	event SetRebatePercent(address indexed sender, uint256 oldRebatePercent, uint256 newRebatePercent);
+
+	event SetProtocolAddress(address indexed sender, address indexed oldProtocol, address indexed newProtocol);
 }

@@ -9,6 +9,7 @@ pragma experimental ABIEncoderV2;
 import "./LoanTokenSettingsLowerAdmin.sol";
 import "./interfaces/ProtocolLike.sol";
 import "./interfaces/FeedsLike.sol";
+import "../../modules/interfaces/ProtocolAffiliatesInterface.sol";
 
 contract LoanTokenLogicStandard is LoanTokenSettingsLowerAdmin {
 	using SignedSafeMath for int256;
@@ -16,7 +17,8 @@ contract LoanTokenLogicStandard is LoanTokenSettingsLowerAdmin {
 	// DON'T ADD VARIABLES HERE, PLEASE
 
 	uint256 public constant VERSION = 5;
-	address internal constant arbitraryCaller = 0x000F400e6818158D541C3EBE45FE3AA0d47372FF;
+
+	// address internal constant arbitraryCaller = 0x000F400e6818158D541C3EBE45FE3AA0d47372FF; // ethereum address! replaced by  arbitraryCallerAddress in LoanTokenSettingsLowerAdmin
 
 	function() external {
 		revert("loan token logic - fallback not allowed");
@@ -39,71 +41,60 @@ contract LoanTokenLogicStandard is LoanTokenSettingsLowerAdmin {
 		}
 	}
 
-	/*
-    flashBorrow is disabled for the MVP, but is going to be added later.
-    therefore, it needs to be revised
-    
-    function flashBorrow(
-        uint256 borrowAmount,
-        address borrower,
-        address target,
-        string calldata signature,
-        bytes calldata data)
-        external
-        payable
-        nonReentrant
-        pausable(msg.sig)
-        settlesInterest
-        returns (bytes memory)
-    {
-        require(borrowAmount != 0, "38");
+	/*flashBorrow is disabled for the MVP, but is going to be added later.
+    therefore, it needs to be revised*/
 
-        _checkPause();
+	function flashBorrow(
+		uint256 borrowAmount,
+		address borrower,
+		address target,
+		string calldata signature,
+		bytes calldata data
+	) external payable nonReentrant onlyFlashLoanWhiteListed(borrower) returns (bytes memory) {
+		require(borrowAmount != 0, "38");
+		//AUDIT: the borrower parameter can be removed
+		require(borrower == msg.sender, "unauthorised usage of a whitelisted address");
 
-        _settleInterest();
+		_checkPause();
 
-        // save before balances
-        uint256 beforeEtherBalance = address(this).balance.sub(msg.value);
-        uint256 beforeAssetsBalance = _underlyingBalance()
-            .add(totalAssetBorrow());
+		_settleInterest();
 
-        // lock totalAssetSupply for duration of flash loan
-        _flTotalAssetSupply = beforeAssetsBalance;
+		// save before balances
+		uint256 beforeEtherBalance = address(this).balance.sub(msg.value);
+		uint256 beforeAssetsBalance = _underlyingBalance().add(totalAssetBorrow());
 
-        // transfer assets to calling contract
-        _safeTransfer(loanTokenAddress, borrower, borrowAmount, "39");
+		// lock totalAssetSupply for duration of flash loan
+		_flTotalAssetSupply = beforeAssetsBalance;
 
-        bytes memory callData;
-        if (bytes(signature).length == 0) {
-            callData = data;
-        } else {
-            callData = abi.encodePacked(bytes4(keccak256(bytes(signature))), data);
-        }
+		// transfer assets to calling contract
+		_safeTransfer(loanTokenAddress, borrower, borrowAmount, "39");
 
-        // arbitrary call
-        (bool success, bytes memory returnData) = arbitraryCaller.call.value(msg.value)(
-            abi.encodeWithSelector(
-                0xde064e0d, // sendCall(address,bytes)
-                target,
-                callData
-            )
-        );
-        require(success, "call failed");
+		bytes memory callData;
+		if (bytes(signature).length == 0) {
+			callData = data;
+		} else {
+			callData = abi.encodePacked(bytes4(keccak256(bytes(signature))), data);
+		}
 
-        // unlock totalAssetSupply
-        _flTotalAssetSupply = 0;
+		// arbitrary call
+		require(arbitraryCallerAddress != address(0), "arbitraryCallerAddress is not set");
+		(bool success, bytes memory returnData) =
+			arbitraryCallerAddress.call.value(msg.value)(
+				abi.encodeWithSelector(
+					0xde064e0d, // sendCall(address,bytes)
+					target,
+					callData
+				)
+			);
+		require(success, "arbitraryCallerAddress.call failed");
 
-        // verifies return of flash loan
-        require(
-            address(this).balance >= beforeEtherBalance &&
-            _underlyingBalance()
-                .add(totalAssetBorrow()) >= beforeAssetsBalance,
-            "40"
-        );
+		// unlock totalAssetSupply
+		_flTotalAssetSupply = 0;
 
-        return returnData;
-    }
-    */
+		require(address(this).balance >= beforeEtherBalance && _underlyingBalance().add(totalAssetBorrow()) >= beforeAssetsBalance, "40");
+
+		return returnData;
+	}
 
 	/**
 	 * borrows funds from the pool. The underlying loan token may not be used as collateral.
@@ -123,11 +114,11 @@ contract LoanTokenLogicStandard is LoanTokenSettingsLowerAdmin {
 		address collateralTokenAddress, // if address(0), this means ETH and ETH must be sent with the call or loanId must be provided
 		address borrower,
 		address receiver,
-		bytes memory /*loanDataBytes*/ // arbitrary order data (for future use)
+		bytes memory // arbitrary order data (for future use) /*loanDataBytes*/
 	)
 		public
 		payable
-		nonReentrant //note: needs to be removed to allow flashloan use cases
+		nonReentrant //note: needs to be removed to allow flashloan use cases?
 		hasEarlyAccessToken
 		returns (
 			uint256,
@@ -196,7 +187,7 @@ contract LoanTokenLogicStandard is LoanTokenSettingsLowerAdmin {
 	)
 		public
 		payable
-		nonReentrant //note: needs to be removed to allow flashloan use cases
+		nonReentrant //note: needs to be removed to allow flashloan use cases?
 		hasEarlyAccessToken
 		returns (
 			uint256,
@@ -252,6 +243,28 @@ contract LoanTokenLogicStandard is LoanTokenSettingsLowerAdmin {
 				sentAmounts,
 				loanDataBytes
 			);
+	}
+
+	function marginTradeAffiliate(
+		bytes32 loanId, // 0 if new loan
+		uint256 leverageAmount, // expected in x * 10**18 where x is the actual leverage (2, 3, 4, or 5)
+		uint256 loanTokenSent,
+		uint256 collateralTokenSent,
+		address collateralTokenAddress,
+		address trader,
+		address affiliateReferrer, // the user was brought by the affiliate (referrer)
+		bytes memory loanDataBytes // arbitrary order data
+	)
+		public
+		payable
+		returns (
+			uint256,
+			uint256 // returns new principal and new collateral added to trade
+		)
+	{
+		if (affiliateReferrer != address(0))
+			ProtocolAffiliatesInterface(sovrynContractAddress).setAffiliatesReferrer(trader, affiliateReferrer);
+		return marginTrade(loanId, leverageAmount, loanTokenSent, collateralTokenSent, collateralTokenAddress, trader, loanDataBytes);
 	}
 
 	function transfer(address _to, uint256 _value) external returns (bool) {
@@ -716,11 +729,14 @@ contract LoanTokenLogicStandard is LoanTokenSettingsLowerAdmin {
 		);
 		require(sentAmounts[1] != 0, "25");
 
+		//REFACTOR: move to a general interface: ProtocolSettingsLike?
+		ProtocolAffiliatesInterface(sovrynContractAddress).setUserNotFirstTradeFlag(sentAddresses[1]);
+
 		return (sentAmounts[1], sentAmounts[4]); // newPrincipal, newCollateral
 	}
 
 	// sentAddresses[0]: lender
-	// sentAddresses[1]: borrower
+	// sentAddresses[1]: borrower/trader
 	// sentAddresses[2]: receiver
 	// sentAddresses[3]: manager
 	// sentAmounts[0]: interestRate

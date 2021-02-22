@@ -47,7 +47,7 @@ def setup():
     SUSD_address = data["SUSD"]
     RBTC_address = data["WRBTC"]
 
-    sovryn = Contract.from_abi("sovryn", address=sovryn_address, abi=interface.ISovryn.abi, owner=acct)
+    sovryn = Contract.from_abi("sovryn", address=sovryn_address, abi=interface.ISovrynBrownie.abi, owner=acct)
     loan_token = Contract.from_abi("loanToken", address=loan_token_address, abi=LoanTokenLogicStandard.abi, owner=acct)
     loan_token_settings = Contract.from_abi("loanTokenSettings", address=loan_token_settings_address, abi=LoanTokenSettingsLowerAdmin.abi, owner=acct)
     SUSD = Contract.from_abi("TestToken", address=SUSD_address, abi=TestToken.abi, owner=acct)

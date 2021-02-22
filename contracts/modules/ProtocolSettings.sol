@@ -48,6 +48,18 @@ contract ProtocolSettings is State, ProtocolTokenUser, ProtocolSettingsEvents {
 		_setTarget(this.setProtocolTokenAddress.selector, target);
 		_setTarget(this.setRolloverBaseReward.selector, target);
 		_setTarget(this.setRebatePercent.selector, target);
+		_setTarget(this.setSovrynProtocolAddress.selector, target);
+	}
+
+	/**
+	 * setting wrong address will break inter module functions calling
+	 * should be set once
+	 */
+	function setSovrynProtocolAddress(address newProtocolAddress) external onlyOwner {
+		address oldProtocolAddress = protocolAddress;
+		protocolAddress = newProtocolAddress;
+
+		emit SetProtocolAddress(msg.sender, oldProtocolAddress, newProtocolAddress);
 	}
 
 	function setPriceFeedContract(address newContract) external onlyOwner {

@@ -129,7 +129,7 @@ def loadConfig():
 
     
 def readLendingFee():
-    sovryn = Contract.from_abi("sovryn", address='0xBAC609F5C8bb796Fa5A31002f12aaF24B7c35818', abi=interface.ISovryn.abi, owner=acct)
+    sovryn = Contract.from_abi("sovryn", address='0xBAC609F5C8bb796Fa5A31002f12aaF24B7c35818', abi=interface.ISovrynBrownie.abi, owner=acct)
     lfp = sovryn.lendingFeePercent()
     print(lfp/1e18)
     
@@ -170,7 +170,7 @@ def readLoanTokenState(loanTokenAddress):
     print("next borrow interest rate", bir)
     
 def readLoan(loanId):
-    sovryn = Contract.from_abi("sovryn", address=contracts['sovrynProtocol'], abi=interface.ISovryn.abi, owner=acct)
+    sovryn = Contract.from_abi("sovryn", address=contracts['sovrynProtocol'], abi=interface.ISovrynBrownie.abi, owner=acct)
     print(sovryn.getLoan(loanId).dict())
 
 def getTokenPrice(loanTokenAddress):
@@ -199,7 +199,7 @@ def testTokenBurning(loanTokenAddress, testTokenAddress):
     assert(tx.events["Burn"]["tokenAmount"] == burnAmount)
     
 def liquidate(protocolAddress, loanId):
-    sovryn = Contract.from_abi("sovryn", address=protocolAddress, abi=interface.ISovryn.abi, owner=acct)
+    sovryn = Contract.from_abi("sovryn", address=protocolAddress, abi=interface.ISovrynBrownie.abi, owner=acct)
     loan = sovryn.getLoan(loanId).dict()
     print(loan)
     if(loan['maintenanceMargin'] > loan['currentMargin']):
@@ -216,7 +216,7 @@ def liquidate(protocolAddress, loanId):
 def testTradeOpeningAndClosing(protocolAddress, loanTokenAddress, underlyingTokenAddress, collateralTokenAddress, loanTokenSent, leverage, testClose, sendValue):
     loanToken = Contract.from_abi("loanToken", address=loanTokenAddress, abi=LoanTokenLogicStandard.abi, owner=acct)
     testToken = Contract.from_abi("TestToken", address = underlyingTokenAddress, abi = TestToken.abi, owner = acct)
-    sovryn = Contract.from_abi("sovryn", address=protocolAddress, abi=interface.ISovryn.abi, owner=acct)
+    sovryn = Contract.from_abi("sovryn", address=protocolAddress, abi=interface.ISovrynBrownie.abi, owner=acct)
     if(sendValue == 0 and testToken.allowance(acct, loanTokenAddress) < loanTokenSent):
         testToken.approve(loanToken, loanTokenSent)
     print('going to trade')
@@ -244,7 +244,7 @@ def testTradeOpeningAndClosing(protocolAddress, loanTokenAddress, underlyingToke
 def testTradeOpeningAndClosingWithCollateral(protocolAddress, loanTokenAddress, underlyingTokenAddress, collateralTokenAddress, collateralTokenSent, leverage, testClose, sendValue):
     loanToken = Contract.from_abi("loanToken", address=loanTokenAddress, abi=LoanTokenLogicStandard.abi, owner=acct)
     testToken = Contract.from_abi("TestToken", address = underlyingTokenAddress, abi = TestToken.abi, owner = acct)
-    sovryn = Contract.from_abi("sovryn", address=protocolAddress, abi=interface.ISovryn.abi, owner=acct)
+    sovryn = Contract.from_abi("sovryn", address=protocolAddress, abi=interface.ISovrynBrownie.abi, owner=acct)
     #if(sendValue == 0 and testToken.allowance(acct, loanTokenAddress) < loanTokenSent):
     #    testToken.approve(loanToken, loanTokenSent)
     print('going to trade')
@@ -273,7 +273,7 @@ def testTradeOpeningAndClosingWithCollateral(protocolAddress, loanTokenAddress, 
 
 def testBorrow(protocolAddress, loanTokenAddress, underlyingTokenAddress, collateralTokenAddress):
     #read contract abis
-    sovryn = Contract.from_abi("sovryn", address=protocolAddress, abi=interface.ISovryn.abi, owner=acct)
+    sovryn = Contract.from_abi("sovryn", address=protocolAddress, abi=interface.ISovrynBrownie.abi, owner=acct)
     loanToken = Contract.from_abi("loanToken", address=loanTokenAddress, abi=LoanTokenLogicStandard.abi, owner=acct)
     testToken = Contract.from_abi("TestToken", address = collateralTokenAddress, abi = TestToken.abi, owner = acct)
     
@@ -332,13 +332,18 @@ def setupTorqueLoanParams(loanTokenAddress, underlyingTokenAddress, collateralTo
     print(tx.info())
     
 def rollover(loanId):
-    sovryn = Contract.from_abi("sovryn", address=contracts['sovrynProtocol'], abi=interface.ISovryn.abi, owner=acct)
+    sovryn = Contract.from_abi("sovryn", address=contracts['sovrynProtocol'], abi=interface.ISovrynBrownie.abi, owner=acct)
     tx = sovryn.rollover(loanId, b'')
     print(tx.info())
     
 def replaceLoanClosings():
-    sovryn = Contract.from_abi("sovryn", address=contracts['sovrynProtocol'], abi=interface.ISovryn.abi, owner=acct)
-    data = sovryn.replaceContract.encode_input(loanClosings.address)
+    sovryn = Contract.from_abi("sovryn", address=contracts['sovrynProtocol'], abi=interface.ISovrynBrownie.abi, owner=acct)
+    data = sovryn.replaceContract.encode_input(loanClosingsBase.address)
+    multisig = Contract.from_abi("MultiSig", address=contracts['multisig'], abi=MultiSigWallet.abi, owner=acct)
+    tx = multisig.submitTransaction(sovryn.address,0,data)
+    txId = tx.events["Submission"]["transactionId"]
+    print(txId);
+    data = sovryn.replaceContract.encode_input(loanClosingsWith.address)
     multisig = Contract.from_abi("MultiSig", address=contracts['multisig'], abi=MultiSigWallet.abi, owner=acct)
     tx = multisig.submitTransaction(sovryn.address,0,data)
     txId = tx.events["Submission"]["transactionId"]
@@ -597,7 +602,7 @@ def updateContracts():
 
 def replaceSwapsExternal():
     #swapsExternal = acct.deploy(SwapsExternal)
-    sovryn = Contract.from_abi("sovryn", address=contracts['sovrynProtocol'], abi=interface.ISovryn.abi, owner=acct)
+    sovryn = Contract.from_abi("sovryn", address=contracts['sovrynProtocol'], abi=interface.ISovrynBrownie.abi, owner=acct)
     data = sovryn.replaceContract.encode_input('0xAa1dEDE8C097349Dd25C98A0bF79c8D9B6e55caf')
     multisig = Contract.from_abi("MultiSig", address=contracts['multisig'], abi=MultiSigWallet.abi, owner=acct)
     tx = multisig.submitTransaction(sovryn.address,0,data)
@@ -607,7 +612,7 @@ def replaceSwapsExternal():
 def replaceLoanOpenings():
     print("replacing loan openings")
     loanOpenings = acct.deploy(LoanOpenings)
-    sovryn = Contract.from_abi("sovryn", address=contracts['sovrynProtocol'], abi=interface.ISovryn.abi, owner=acct)
+    sovryn = Contract.from_abi("sovryn", address=contracts['sovrynProtocol'], abi=interface.ISovrynBrownie.abi, owner=acct)
     data = sovryn.replaceContract.encode_input(loanOpenings.address)
     multisig = Contract.from_abi("MultiSig", address=contracts['multisig'], abi=MultiSigWallet.abi, owner=acct)
     tx = multisig.submitTransaction(sovryn.address,0,data)
@@ -617,7 +622,7 @@ def replaceLoanOpenings():
 def replaceSwapsUser():
     print("replacing swaps user")
     swapsUser = acct.deploy(SwapsUser)
-    sovryn = Contract.from_abi("sovryn", address=contracts['sovrynProtocol'], abi=interface.ISovryn.abi, owner=acct)
+    sovryn = Contract.from_abi("sovryn", address=contracts['sovrynProtocol'], abi=interface.ISovrynBrownie.abi, owner=acct)
     data = sovryn.replaceContract.encode_input(swapsUser.address)
     multisig = Contract.from_abi("MultiSig", address=contracts['multisig'], abi=MultiSigWallet.abi, owner=acct)
     tx = multisig.submitTransaction(sovryn.address,0,data)
@@ -627,7 +632,7 @@ def replaceSwapsUser():
 def replaceSwapsImplSovrynSwap():
     print("replacing swaps")
     swaps = acct.deploy(SwapsImplSovrynSwap)
-    sovryn = Contract.from_abi("sovryn", address=contracts['sovrynProtocol'], abi=interface.ISovryn.abi, owner=acct)
+    sovryn = Contract.from_abi("sovryn", address=contracts['sovrynProtocol'], abi=interface.ISovrynBrownie.abi, owner=acct)
     data = sovryn.setSwapsImplContract.encode_input(swaps.address)
     multisig = Contract.from_abi("MultiSig", address=contracts['multisig'], abi=MultiSigWallet.abi, owner=acct)
     tx = multisig.submitTransaction(sovryn.address,0,data)

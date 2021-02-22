@@ -9,7 +9,7 @@ import pytest
 from brownie import Contract, Wei, reverts
 from fixedint import *
 import shared
-from shared_lending_functions import *
+from loanToken.lending.shared_lending_functions import *
 
 '''
 Test lend to the pool. The lender mint tokens from loanToken using SUSD as deposit.

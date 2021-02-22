@@ -25,6 +25,22 @@ networks:
             block_time: 0
             default_balance: 1000000
             #time: 2020-05-08T14:54:08+0000
+    ganache:
+        gas_limit: 6800000
+        gas_price: 65000000
+        reverting_tx_gas_limit: 8000000
+        default_contract_owner: true
+        cmd_settings:
+            #host: http://127.0.0.1:7545/
+            port: 7545
+            gas_limit: 6800000
+            accounts: 10
+            evm_version: istanbul
+            mnemonic: brownie
+            block_time: 0
+            default_balance: 1000000
+            persist: false
+            #time: 2020-12-24T01:07:35+03:00
     live:
         cmd_settings:
             port: 443
@@ -32,6 +48,10 @@ networks:
         gas_price: 65000010 # 8000000000
         reverting_tx_gas_limit: false
         default_contract_owner: false
+    private:
+        host: http://127.0.0.1:7545/
+        gas_price: 0
+        persist: false
 
 compiler:
     evm_version: null
@@ -61,6 +81,7 @@ reports:
         - SafeERC20
         - SafeMath
         - EnumerableBytes32Set
+        - EnumerableAddressSet
 
 hypothesis:
     deadline: null

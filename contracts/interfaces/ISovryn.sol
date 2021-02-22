@@ -5,15 +5,16 @@
 
 pragma solidity >=0.5.0 <0.6.0;
 pragma experimental ABIEncoderV2;
-
-import "../contracts/core/State.sol";
-import "../contracts/events/ProtocolSettingsEvents.sol";
-import "../contracts/events/LoanSettingsEvents.sol";
-import "../contracts/events/LoanOpeningsEvents.sol";
-import "../contracts/events/LoanMaintenanceEvents.sol";
-import "../contracts/events/LoanClosingsEvents.sol";
-import "../contracts/events/FeesEvents.sol";
-import "../contracts/events/SwapsEvents.sol";
+//TODO: stored in ./interfaces only while brownie isn't removed
+//TODO: move to contracts/interfaces after with brownie is removed
+import "../core/State.sol";
+import "../events/ProtocolSettingsEvents.sol";
+import "../events/LoanSettingsEvents.sol";
+import "../events/LoanOpeningsEvents.sol";
+import "../events/LoanMaintenanceEvents.sol";
+import "../events/LoanClosingsEvents.sol";
+import "../events/FeesEvents.sol";
+import "../events/SwapsEvents.sol";
 
 contract ISovryn is
 	State,
@@ -33,6 +34,8 @@ contract ISovryn is
 	function getTarget(string calldata sig) external view returns (address);
 
 	////// Protocol Settings //////
+
+	function setSovrynProtocolAddress(address newProtocolAddress) external;
 
 	function setPriceFeedContract(address newContract) external;
 
@@ -59,8 +62,6 @@ contract ISovryn is
 	function setMaxSwapSize(uint256 newAmount) external;
 
 	function setFeesController(address newController) external;
-
-	function withdrawFees(address token, address receiver) external returns (uint256);
 
 	function withdrawLendingFees(
 		address token,
@@ -302,4 +303,35 @@ contract ISovryn is
 	function setLegacyOracles(address[] calldata refs, address[] calldata oracles) external;
 
 	function getLegacyOracle(address ref) external view returns (address);
+
+	////// Affiliates Module //////
+
+	function getAffiliatesReferrerBalances(address referrer)
+		external
+		view
+		returns (address[] memory referrerTokensList, uint256[] memory referrerTokensBalances);
+
+	function getAffiliatesReferrerTokensList(address referrer) external view returns (address[] memory tokensList);
+
+	function getAffiliatesReferrerTokenBalance(address referrer, address token) external view returns (uint256);
+
+	function getUserNotFirstTradeFlag(address user) external view returns (bool);
+
+	function setUserNotFirstTradeFlag(address user) external view returns (bool);
+
+	function payTradingFeeToAffiliatesReferrer(
+		address referrer,
+		address token,
+		uint256 tradingFeeTokenBaseAmount
+	) external returns (uint256 referrerTradingFee);
+
+	function withdrawAffiliatesReferrerTokenFees(
+		address token,
+		address receiver,
+		uint256 amount
+	) external returns (uint256 withdrawAmount);
+
+	function setAffiliatesUserReferrer(address user, address referrer) external; //onlyCallableByLoanPools
+
+	// function getAffiliatesUserReferrer(address user) external returns ; //AUDIT: do we need it to be public?
 }

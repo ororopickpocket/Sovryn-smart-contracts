@@ -41,7 +41,7 @@ contract("MultiSigKeyHolders:", (accounts) => {
 			let tx = await multiSig.addEthereumAddress(account1);
 
 			let isOwner = await multiSig.isEthereumAddressOwner.call(account1);
-			expect(isOwner).to.be.true();
+			expect(isOwner).to.be.true;
 
 			let list = await multiSig.getEthereumAddresses.call();
 			expect(list.length).to.be.equal(1);
@@ -66,9 +66,9 @@ contract("MultiSigKeyHolders:", (accounts) => {
 			let tx = await multiSig.addEthereumAddresses([account1, account2]);
 
 			let isOwner = await multiSig.isEthereumAddressOwner.call(account1);
-			expect(isOwner).to.be.true();
+			expect(isOwner).to.be.true;
 			isOwner = await multiSig.isEthereumAddressOwner.call(account2);
-			expect(isOwner).to.be.true();
+			expect(isOwner).to.be.true;
 
 			let list = await multiSig.getEthereumAddresses.call();
 			expect(list.length).to.be.equal(2);
@@ -120,7 +120,7 @@ contract("MultiSigKeyHolders:", (accounts) => {
 			let tx = await multiSig.addBitcoinAddress(bitcoinAccount1);
 
 			let isOwner = await multiSig.isBitcoinAddressOwner.call(bitcoinAccount1);
-			expect(isOwner).to.be.true();
+			expect(isOwner).to.be.true;
 
 			let list = await multiSig.getBitcoinAddresses.call();
 			expect(list.length).to.be.equal(1);
@@ -145,9 +145,9 @@ contract("MultiSigKeyHolders:", (accounts) => {
 			let tx = await multiSig.addBitcoinAddresses([bitcoinAccount1, bitcoinAccount2]);
 
 			let isOwner = await multiSig.isBitcoinAddressOwner.call(bitcoinAccount1);
-			expect(isOwner).to.be.true();
+			expect(isOwner).to.be.true;
 			isOwner = await multiSig.isBitcoinAddressOwner.call(bitcoinAccount2);
-			expect(isOwner).to.be.true();
+			expect(isOwner).to.be.true;
 
 			let list = await multiSig.getBitcoinAddresses.call();
 			expect(list.length).to.be.equal(2);
@@ -179,9 +179,9 @@ contract("MultiSigKeyHolders:", (accounts) => {
 			let tx = await multiSig.addEthereumAndBitcoinAddresses([account1, account2], [bitcoinAccount1, bitcoinAccount2]);
 
 			let isOwner = await multiSig.isEthereumAddressOwner.call(account1);
-			expect(isOwner).to.be.true();
+			expect(isOwner).to.be.true;
 			isOwner = await multiSig.isEthereumAddressOwner.call(account2);
-			expect(isOwner).to.be.true();
+			expect(isOwner).to.be.true;
 
 			let list = await multiSig.getEthereumAddresses.call();
 			expect(list.length).to.be.equal(2);
@@ -196,9 +196,9 @@ contract("MultiSigKeyHolders:", (accounts) => {
 			});
 
 			isOwner = await multiSig.isBitcoinAddressOwner.call(bitcoinAccount1);
-			expect(isOwner).to.be.true();
+			expect(isOwner).to.be.true;
 			isOwner = await multiSig.isBitcoinAddressOwner.call(bitcoinAccount2);
-			expect(isOwner).to.be.true();
+			expect(isOwner).to.be.true;
 
 			list = await multiSig.getBitcoinAddresses.call();
 			expect(list.length).to.be.equal(2);
@@ -228,7 +228,7 @@ contract("MultiSigKeyHolders:", (accounts) => {
 			let tx = await multiSig.removeEthereumAddress(account1);
 
 			let isOwner = await multiSig.isEthereumAddressOwner.call(account1);
-			expect(isOwner).to.be.false();
+			expect(isOwner).to.be.false;
 
 			let list = await multiSig.getEthereumAddresses.call();
 			expect(list.length).to.be.equal(0);
@@ -253,9 +253,9 @@ contract("MultiSigKeyHolders:", (accounts) => {
 			let tx = await multiSig.removeEthereumAddresses([account1, account2]);
 
 			let isOwner = await multiSig.isEthereumAddressOwner.call(account1);
-			expect(isOwner).to.be.false();
+			expect(isOwner).to.be.false;
 			isOwner = await multiSig.isEthereumAddressOwner.call(account2);
-			expect(isOwner).to.be.false();
+			expect(isOwner).to.be.false;
 
 			let list = await multiSig.getEthereumAddresses.call();
 			expect(list.length).to.be.equal(0);
@@ -283,7 +283,7 @@ contract("MultiSigKeyHolders:", (accounts) => {
 			let tx = await multiSig.removeBitcoinAddress(bitcoinAccount1);
 
 			let isOwner = await multiSig.isBitcoinAddressOwner.call(bitcoinAccount1);
-			expect(isOwner).to.be.false();
+			expect(isOwner).to.be.false;
 
 			let list = await multiSig.getBitcoinAddresses.call();
 			expect(list.length).to.be.equal(0);
@@ -308,9 +308,9 @@ contract("MultiSigKeyHolders:", (accounts) => {
 			let tx = await multiSig.removeBitcoinAddresses([bitcoinAccount1, bitcoinAccount2]);
 
 			let isOwner = await multiSig.isBitcoinAddressOwner.call(bitcoinAccount1);
-			expect(isOwner).to.be.false();
+			expect(isOwner).to.be.false;
 			isOwner = await multiSig.isBitcoinAddressOwner.call(bitcoinAccount2);
-			expect(isOwner).to.be.false();
+			expect(isOwner).to.be.false;
 
 			let list = await multiSig.getBitcoinAddresses.call();
 			expect(list.length).to.be.equal(0);
@@ -341,9 +341,9 @@ contract("MultiSigKeyHolders:", (accounts) => {
 			let tx = await multiSig.removeEthereumAndBitcoinAddresses([account1, account2], [bitcoinAccount1, bitcoinAccount2]);
 
 			let isOwner = await multiSig.isEthereumAddressOwner.call(account1);
-			expect(isOwner).to.be.false();
+			expect(isOwner).to.be.false;
 			isOwner = await multiSig.isEthereumAddressOwner.call(account2);
-			expect(isOwner).to.be.false();
+			expect(isOwner).to.be.false;
 
 			let list = await multiSig.getEthereumAddresses.call();
 			expect(list.length).to.be.equal(0);
@@ -356,9 +356,9 @@ contract("MultiSigKeyHolders:", (accounts) => {
 			});
 
 			isOwner = await multiSig.isBitcoinAddressOwner.call(bitcoinAccount1);
-			expect(isOwner).to.be.false();
+			expect(isOwner).to.be.false;
 			isOwner = await multiSig.isBitcoinAddressOwner.call(bitcoinAccount2);
-			expect(isOwner).to.be.false();
+			expect(isOwner).to.be.false;
 
 			list = await multiSig.getBitcoinAddresses.call();
 			expect(list.length).to.be.equal(0);

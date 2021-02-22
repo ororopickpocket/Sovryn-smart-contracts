@@ -15,7 +15,7 @@ def addLoanToken(tokenName, tokenSymbol, tokenDecimals, tokenInitialAmount, loan
     
     loadConfig()
 
-    sovryn = Contract.from_abi("sovryn", address=protocolAddress, abi=interface.ISovryn.abi, owner=acct)
+    sovryn = Contract.from_abi("sovryn", address=protocolAddress, abi=interface.ISovrynBrownie.abi, owner=acct)
     
     tokens = Munch()
 
