@@ -29,7 +29,7 @@ networks:
     cmd_settings:
       port: 443
     gas_limit: 6800000
-    gas_price: 65000010 # 8000000000
+    gas_price: 20000000000 # 20 GWei
     reverting_tx_gas_limit: false
     default_contract_owner: false
 
