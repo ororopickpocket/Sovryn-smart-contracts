@@ -25,7 +25,7 @@ There are two HH configs: the main `hardhat.config.js` for running pure hh tests
 
 There is only one such a test for the moment where it is necessary to put two txs in one block which is not supported by HH so is forcedly run under ganache. HH team is working on an extended toolbelt that will include such an option.
 
-If you have to run a test under ganache, just put `;with Ganache` in the end of the test title.
+If you have to run a test under ganache, just put `;using Ganache` in the end of the test title.
 
 run 
 ```
