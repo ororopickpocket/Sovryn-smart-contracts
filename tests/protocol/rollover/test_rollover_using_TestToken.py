@@ -5,20 +5,23 @@ Tests the rollover function
 import pytest
 from fixedint import *
 from loanToken.sov_reward import verify_sov_reward_payment
+import shared
 
 
-def setup_rollover_test(RBTC, SUSD, accounts, chain, loanToken, set_demand_curve, sovryn):
+def setup_rollover_test(RBTC, SUSD, accounts, chain, loanToken, loan_token_sent, leverage_amount, set_demand_curve, sovryn):
     set_demand_curve()
     SUSD.approve(loanToken.address, 10 ** 40)
     lender = accounts[0]
     borrower = accounts[1]
     loanToken.mint(lender, 10 ** 30)
-    loan_token_sent = 100e18
     SUSD.mint(borrower, loan_token_sent)
     SUSD.approve(loanToken.address, loan_token_sent, {'from': borrower})
+    SUSD.mint(borrower, loan_token_sent)
+    SUSD.approve(sovryn.address, loan_token_sent, {'from': borrower})
+    SUSD.approve(sovryn.address, loan_token_sent)
     tx = loanToken.marginTrade(
         "0",  # loanId  (0 for new loans)
-        2e18,  # leverageAmount
+        leverage_amount,  # leverageAmount
         loan_token_sent,  # loanTokenSent
         0,  # no collateral token sent
         RBTC.address,  # collateralTokenAddress
@@ -40,7 +43,7 @@ Test that loan attributes are updated
 Test loan swap event
 """
 def test_rollover(accounts, chain, loanToken, set_demand_curve, sovryn, priceFeeds, SUSD, RBTC, BZRX, SOV, FeesEvents):
-    borrower, loan, loan_id = setup_rollover_test(RBTC, SUSD, accounts, chain, loanToken, set_demand_curve, sovryn)
+    borrower, loan, loan_id = setup_rollover_test(RBTC, SUSD, accounts, chain, loanToken, 100e18, 2e18, set_demand_curve, sovryn)
     lender_interest_data = sovryn.getLenderInterestData(loanToken.address, SUSD.address).dict()
 
     lender_pool_initial_balance = SUSD.balanceOf(loanToken.address)
@@ -77,13 +80,39 @@ def test_rollover(accounts, chain, loanToken, set_demand_curve, sovryn, priceFee
     assert(fixedint(loan_swap_event['sourceAmount']).sub(interest_unpaid).add(trading_fee).mul(precision).div(trade_rate).num <= 10000)
     assert(loan_swap_event['destAmount'] >= interest_unpaid)
 
+    rollover_event = tx_rollover.events['Rollover']
+    assert(rollover_event['user'] == borrower)
+    assert(rollover_event['lender'] == loanToken.address)
+    assert(rollover_event['loanId'] == loan_id)
+    assert(rollover_event['principal'] == loan_after['principal'])
+    assert(rollover_event['collateral'] == loan_after['collateral'])
+    assert(rollover_event['endTimestamp'] == loan_after['endTimestamp'])
+    assert(rollover_event['rewardReceiver'] == accounts[0]) #sender
+    assert(rollover_event['reward'] > 0)
+
+def test_rollover_tiny_amount(accounts, chain, loanToken, set_demand_curve, sovryn, priceFeeds, SUSD, RBTC, BZRX, SOV, FeesEvents):
+    constants = shared.Constants()
+    loan_token_sent = (constants.TINY_AMOUNT + 1) * 10**4
+    borrower, loan, loan_id = setup_rollover_test(RBTC, SUSD, accounts, chain, loanToken, loan_token_sent, 1e18, set_demand_curve, sovryn)
+
+    time_until_loan_end = loan['endTimestamp'] - chain.time()
+    chain.sleep(time_until_loan_end)
+    chain.mine(1)
+
+    tx_rollover = sovryn.rollover(loan_id, b'', {'from': borrower})
+    tx_rollover.info()
+
+    loan_after = sovryn.getLoan(loan_id).dict()
+    assert(loan_after['principal'] == 0)
+    assert(loan_after['collateral'] == 0)
+    print(loan_after)
 
 """
 Collateral should decrease
 Sender collateral balance should increase
 """
 def test_rollover_reward_payment(accounts, chain, loanToken, set_demand_curve, sovryn, priceFeeds, SUSD, RBTC):
-    borrower, initial_loan, loan_id = setup_rollover_test(RBTC, SUSD, accounts, chain, loanToken, set_demand_curve, sovryn)
+    borrower, initial_loan, loan_id = setup_rollover_test(RBTC, SUSD, accounts, chain, loanToken, 100e18, 2e18, set_demand_curve, sovryn)
 
     time_until_loan_end = initial_loan['endTimestamp'] - chain.time()
     chain.sleep(time_until_loan_end)

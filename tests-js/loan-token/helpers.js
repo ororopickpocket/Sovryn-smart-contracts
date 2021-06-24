@@ -75,7 +75,7 @@ const verify_lending_result_and_itoken_price_change = async (
 	let value = sendValue ? loan_token_sent.toString() : "0";
 	await loanToken.marginTrade(
 		constants.ZERO_BYTES32, // loanId  (0 for new loans)
-		new BN(2).pow(new BN(18)).toString(), // leverageAmount
+		oneEth, // leverageAmount
 		loan_token_sent.toString(), // loanTokenSent
 		0, // no collateral token sent
 		collateralToken.address, // collateralTokenAddress

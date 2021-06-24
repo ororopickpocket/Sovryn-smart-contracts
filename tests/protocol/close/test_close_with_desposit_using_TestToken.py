@@ -12,6 +12,7 @@ from brownie import reverts
 from fixedint import *
 from helpers import decode_log
 from loanToken.sov_reward import verify_sov_reward_payment
+import shared
 
 """
 Test CloseWithDeposit event parameters
@@ -75,6 +76,74 @@ def test_partial_close_with_deposit(sovryn, set_demand_curve, lend_to_pool, open
                                      initial_loan_interest, loanToken, loan_id, priceFeeds, principal, receiver,
                                      sovryn, LoanClosingsEvents, FeesEvents, SOV)
 
+"""
+Test CloseWithDeposit event parameters
+Test refund collateral to receiver
+Test refund interest to receiver
+Test loan update
+Test returning principal to lender with deposit
+"""
+def test_partial_close_with_deposit_tiny_position(sovryn, set_demand_curve, lend_to_pool, open_margin_trade_position, SUSD, RBTC,
+                                    loanToken, priceFeeds, chain, accounts, LoanClosingsEvents, FeesEvents, SOV):
+
+    borrower = accounts[3]
+    receiver = accounts[4]
+
+    set_demand_curve()
+    (_, _) = lend_to_pool(lender=accounts[2])
+    (loan_id, trader, loan_token_sent, leverage_amount) = open_margin_trade_position(trader=borrower)
+
+    chain.sleep(10*24*60*60)  # time travel 10 days
+    chain.mine(1)
+
+    initial_loan = sovryn.getLoan(loan_id)
+    principal = initial_loan['principal']
+    collateral = initial_loan['collateral']
+    initial_loan_interest = sovryn.getLoanInterestData(loan_id)
+
+    # amount to check that tiny position won't be created
+    constants = shared.Constants()
+    deposit_amount = principal - constants.TINY_AMOUNT
+    internal_test_close_with_deposit(deposit_amount, RBTC, SUSD, borrower, chain, collateral, initial_loan,
+                                     initial_loan_interest, loanToken, loan_id, priceFeeds, principal, receiver,
+                                     sovryn, LoanClosingsEvents, FeesEvents, SOV)
+
+"""
+Test CloseWithDeposit event parameters
+Test refund collateral to receiver
+Test refund interest to receiver
+Test loan update
+Test returning principal to lender with deposit
+"""
+def test_partial_close_with_swap_tiny_position(sovryn, set_demand_curve, lend_to_pool, open_margin_trade_position, SUSD, RBTC,
+                                                  loanToken, priceFeeds, chain, accounts, LoanClosingsEvents, FeesEvents, SOV):
+
+    borrower = accounts[3]
+    receiver = accounts[4]
+
+    set_demand_curve()
+    (_, _) = lend_to_pool(lender=accounts[2])
+    (loan_id, trader, loan_token_sent, leverage_amount) = open_margin_trade_position(trader=borrower)
+
+    chain.sleep(10*24*60*60)  # time travel 10 days
+    chain.mine(1)
+
+    initial_loan = sovryn.getLoan(loan_id)
+    principal = initial_loan['principal']
+    collateral = initial_loan['collateral']
+    initial_loan_interest = sovryn.getLoanInterestData(loan_id)
+
+    # amount to check that tiny position won't be created
+    constants = shared.Constants()
+    swap_amount = collateral - constants.TINY_AMOUNT
+
+    tx = sovryn.closeWithSwap(loan_id, receiver, swap_amount, True, "", {'from': borrower})
+    tx.info()
+
+    # Test loan update
+    end_loan = sovryn.getLoan(loan_id)
+    assert end_loan['principal'] == 0
+    assert end_loan['collateral'] == 0
 
 def test_close_with_zero_deposit_should_fail(sovryn, set_demand_curve, lend_to_pool, open_margin_trade_position, chain, accounts):
     borrower = accounts[3]
@@ -104,6 +173,9 @@ def internal_test_close_with_deposit(deposit_amount, RBTC, SUSD, borrower, chain
     tx.info()
 
     loan_close_amount = principal if deposit_amount > principal else deposit_amount
+    # check that tiny position won't be created
+    constants = shared.Constants()
+    loan_close_amount = principal if principal - loan_close_amount <= constants.TINY_AMOUNT else loan_close_amount
     withdraw_amount = collateral if loan_close_amount == principal \
         else fixedint(collateral).mul(loan_close_amount).div(principal).num
     end_collateral = collateral - withdraw_amount

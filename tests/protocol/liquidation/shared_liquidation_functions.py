@@ -6,10 +6,10 @@ import pytest
 from brownie import reverts
 from fixedint import *
 from loanToken.sov_reward import verify_sov_reward_payment
-
+import shared
 
 def liquidate(accounts, loanToken, underlyingToken, set_demand_curve, collateralToken, sovryn, priceFeeds, rate, WRBTC,
-              FeesEvents, SOV, chain):
+              FeesEvents, SOV, chain, checkTinyPosition):
     # set the demand curve to set interest rates
     set_demand_curve()
     
@@ -19,7 +19,7 @@ def liquidate(accounts, loanToken, underlyingToken, set_demand_curve, collateral
     loan_token_sent = 10e18
     
     # lend to the pool, mint tokens if required, open a margin trade position
-    loan_id = prepare_liquidation(lender, borrower, liquidator, loan_token_sent, loanToken, underlyingToken, collateralToken, sovryn, WRBTC)
+    loan_id = prepare_liquidation(lender, borrower, liquidator, loan_token_sent, loanToken, underlyingToken, collateralToken, sovryn, WRBTC, checkTinyPosition)
     loan = sovryn.getLoan(loan_id).dict()
 
     # set the rates so we're able to liquidate
@@ -35,10 +35,13 @@ def liquidate(accounts, loanToken, underlyingToken, set_demand_curve, collateral
     chain.sleep(10*24*60*60)  # time travel 10 days
     chain.mine(1)
 
+    # amount to check that tiny position won't be created
+    constants = shared.Constants()
+    amount_to_liquidate = loan['principal'] - constants.TINY_AMOUNT if checkTinyPosition else loan_token_sent
     # liquidate
-    tx_liquidation = sovryn.liquidate(loan_id, liquidator, loan_token_sent, {'from': liquidator, 'value' :value})
-    
-    verify_liquidation_event(loan, tx_liquidation, lender, borrower, liquidator, loan_token_sent, loanToken, underlyingToken, set_demand_curve, collateralToken, sovryn, priceFeeds, rate)
+    tx_liquidation = sovryn.liquidate(loan_id, liquidator, amount_to_liquidate, {'from': liquidator, 'value' :value})
+
+    verify_liquidation_event(loan, tx_liquidation, lender, borrower, liquidator, amount_to_liquidate, loanToken, underlyingToken, set_demand_curve, collateralToken, sovryn, priceFeeds, rate)
     if(underlyingToken != WRBTC):
         verify_sov_reward_payment(tx_liquidation, FeesEvents, SOV, borrower, loan_id, sov_borrower_initial_balance, 1)
 
@@ -46,7 +49,7 @@ def liquidate(accounts, loanToken, underlyingToken, set_demand_curve, collateral
 '''
 should fail to liquidate a healthy position
 '''
-def liquidate_healthy_position_should_fail(accounts, loanToken, underlyingToken, set_demand_curve, collateralToken, sovryn, priceFeeds, WRBTC):
+def liquidate_healthy_position_should_fail(accounts, loanToken, underlyingToken, set_demand_curve, collateralToken, sovryn, priceFeeds, WRBTC, checkTinyPosition):
     # set the demand curve to set interest rates
     set_demand_curve()
     
@@ -56,7 +59,7 @@ def liquidate_healthy_position_should_fail(accounts, loanToken, underlyingToken,
     loan_token_sent = 10e18
     
     # lend to the pool, mint tokens if required, open a margin trade position
-    loan_id = prepare_liquidation(lender, borrower, liquidator, loan_token_sent, loanToken, underlyingToken, collateralToken, sovryn, WRBTC)
+    loan_id = prepare_liquidation(lender, borrower, liquidator, loan_token_sent, loanToken, underlyingToken, collateralToken, sovryn, WRBTC, checkTinyPosition)
     
     # try to liquidate the still healthy position
     
@@ -67,7 +70,7 @@ def liquidate_healthy_position_should_fail(accounts, loanToken, underlyingToken,
 '''
 lend to the pool, mint tokens if required, open a margin trade position
 '''
-def prepare_liquidation(lender, borrower, liquidator, loan_token_sent, loanToken, underlyingToken, collateralToken, sovryn, WRBTC):
+def prepare_liquidation(lender, borrower, liquidator, loan_token_sent, loanToken, underlyingToken, collateralToken, sovryn, WRBTC, checkTinyPosition):
     underlyingToken.approve(loanToken.address, 1e40)
     
     if (WRBTC == underlyingToken):
@@ -75,10 +78,11 @@ def prepare_liquidation(lender, borrower, liquidator, loan_token_sent, loanToken
         value = loan_token_sent
     else:
         loanToken.mint(lender, 1e21)
-        underlyingToken.mint(borrower, loan_token_sent)
-        underlyingToken.mint(liquidator, loan_token_sent)
-        underlyingToken.approve(loanToken.address, loan_token_sent, {'from': borrower})
-        underlyingToken.approve(sovryn.address, loan_token_sent, {'from': liquidator})
+        multiplier = 10**3 if checkTinyPosition else 1
+        underlyingToken.mint(borrower, loan_token_sent * multiplier)
+        underlyingToken.mint(liquidator, loan_token_sent * multiplier)
+        underlyingToken.approve(loanToken.address, loan_token_sent * multiplier, {'from': borrower})
+        underlyingToken.approve(sovryn.address, loan_token_sent * multiplier, {'from': liquidator})
         value = 0
 
     tx = loanToken.marginTrade(
@@ -122,6 +126,9 @@ def verify_liquidation_event(loan, tx_liquidation, lender, borrower, liquidator,
     max_seizable = collateral_ if (max_seizable > collateral_) else max_seizable
 
     loan_close_amount = max_liquidatable if (loan_token_sent > max_liquidatable.num) else loan_token_sent
+    # check that tiny position won't be created
+    constants = shared.Constants()
+    loan_close_amount = max_liquidatable if (int(max_liquidatable) - loan_close_amount <= constants.TINY_AMOUNT) else loan_close_amount
     collateral_withdraw_amount = fixedint(max_seizable).mul(loan_close_amount).div(max_liquidatable)
 
     liquidate_event = tx_liquidation.events['Liquidate']
@@ -134,7 +141,7 @@ def verify_liquidation_event(loan, tx_liquidation, lender, borrower, liquidator,
     
     print('repayAmount', liquidate_event['repayAmount'])
     print('loan_token_sent', loan_token_sent)
-    assert(liquidate_event['repayAmount'] == loan_token_sent)
+    assert(liquidate_event['repayAmount'] == loan_close_amount)
     assert(liquidate_event['collateralWithdrawAmount'] == collateral_withdraw_amount)
     assert(liquidate_event['collateralToLoanRate'] == collateral_to_loan_rate)
     assert(liquidate_event['currentMargin'] == current_margin)

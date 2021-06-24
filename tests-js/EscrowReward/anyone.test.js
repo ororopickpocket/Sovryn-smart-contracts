@@ -1,8 +1,14 @@
 // For this test, multisig wallet will be done by normal wallets.
 
 const EscrowReward = artifacts.require("EscrowReward");
-const LockedSOV = artifacts.require("LockedSOVMockup"); // Ideally should be using actual LockedSOV for testing.
+const LockedSOV = artifacts.require("LockedSOV"); // Ideally should be using actual LockedSOV for testing.
+const StakingLogic = artifacts.require("Staking");
+const StakingProxy = artifacts.require("StakingProxy");
 const SOV = artifacts.require("TestToken");
+const FeeSharingProxy = artifacts.require("FeeSharingProxyMockup");
+const VestingLogic = artifacts.require("VestingLogic");
+const VestingFactory = artifacts.require("VestingFactory");
+const VestingRegistry = artifacts.require("VestingRegistry3");
 
 const {
 	BN, // Big Number support.
@@ -14,6 +20,8 @@ const { assert } = require("chai");
 
 // Some constants we would be using in the contract.
 let zero = new BN(0);
+let cliff = 1; // This is in 4 weeks. i.e. 1 * 4 weeks.
+let duration = 11; // This is in 4 weeks. i.e. 11 * 4 weeks.
 const depositLimit = 75000000;
 
 /**
@@ -48,8 +56,29 @@ contract("Escrow Rewards (Any User Functions)", (accounts) => {
 		// Creating the instance of SOV Token.
 		sov = await SOV.new("Sovryn", "SOV", 18, zero);
 
-		// Creating the instance of LockedSOV Contract.
-		lockedSOV = await LockedSOV.new(sov.address, [multisig]);
+		// Creating the Staking Instance.
+		stakingLogic = await StakingLogic.new(sov.address);
+		staking = await StakingProxy.new(sov.address);
+		await staking.setImplementation(stakingLogic.address);
+		staking = await StakingLogic.at(staking.address);
+
+		// Creating the FeeSharing Instance.
+		feeSharingProxy = await FeeSharingProxy.new(constants.ZERO_ADDRESS, staking.address);
+
+		// Creating the Vesting Instance.
+		vestingLogic = await VestingLogic.new();
+		vestingFactory = await VestingFactory.new(vestingLogic.address);
+		vestingRegistry = await VestingRegistry.new(
+			vestingFactory.address,
+			sov.address,
+			staking.address,
+			feeSharingProxy.address,
+			creator // This should be Governance Timelock Contract.
+		);
+		vestingFactory.transferOwnership(vestingRegistry.address);
+
+		// Creating the instance of newLockedSOV Contract.
+		lockedSOV = await LockedSOV.new(sov.address, vestingRegistry.address, cliff, duration, [multisig]);
 	});
 
 	beforeEach("Creating New Escrow Contract Instance.", async () => {

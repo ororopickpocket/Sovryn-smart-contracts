@@ -20,8 +20,8 @@ process is handled by the shared function margin_trading_sending_loan_tokens
 4. retrieve the loan from the smart contract and make sure all values are set as expected
 '''
 def test_margin_trading_sending_loan_tokens(accounts, sovryn, loanTokenWRBTC, SUSD, WRBTC, priceFeeds, chain, SOV, FeesEvents):
-    margin_trading_sending_loan_tokens(accounts, sovryn, loanTokenWRBTC, WRBTC, SUSD, priceFeeds, chain, True)
-    margin_trading_sov_reward_payment(accounts, loanTokenWRBTC, WRBTC, SUSD, chain, SOV, FeesEvents)
+    margin_trading_sending_loan_tokens(accounts, sovryn, loanTokenWRBTC, 1e18, WRBTC, SUSD, priceFeeds, chain, True)
+    margin_trading_sov_reward_payment(accounts, loanTokenWRBTC, 1e18, WRBTC, SUSD, chain, SOV, FeesEvents)
 
 '''
 tests margin trading sending collateral tokens as collateral. 

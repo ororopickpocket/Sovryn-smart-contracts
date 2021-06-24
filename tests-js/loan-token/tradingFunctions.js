@@ -21,7 +21,7 @@ process:
 */
 const margin_trading_sending_loan_tokens = async (accounts, sovryn, loanToken, underlyingToken, collateralToken, priceFeeds, sendValue) => {
 	// preparation
-	const loan_token_sent = oneEth;
+	const loan_token_sent = oneEth.mul(new BN(10));
 	await underlyingToken.mint(loanToken.address, loan_token_sent.mul(new BN(3)));
 	await underlyingToken.mint(accounts[0], loan_token_sent);
 	await underlyingToken.approve(loanToken.address, loan_token_sent);
@@ -120,7 +120,7 @@ const margin_trading_sending_loan_tokens = async (accounts, sovryn, loanToken, u
 
 const margin_trading_sov_reward_payment = async (accounts, loanToken, underlyingToken, collateralToken, SOV, FeesEvents) => {
 	// preparation
-	const loan_token_sent = oneEth;
+	const loan_token_sent = oneEth.mul(new BN(10));
 	await underlyingToken.mint(loanToken.address, loan_token_sent.mul(new BN(3)));
 	const trader = accounts[0];
 	await underlyingToken.mint(trader, loan_token_sent);

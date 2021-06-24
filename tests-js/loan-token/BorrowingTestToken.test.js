@@ -370,15 +370,15 @@ contract("LoanTokenBorrowing", (accounts) => {
 			const decode = decodeLogs(receipt.rawLogs, LoanOpenings, "Borrow");
 			const loanId = decode[0].args["loanId"];
 
-			await SUSD.transfer(accounts[2], collateralTokenSent);
+			await SUSD.transfer(accounts[2], withdrawAmount);
 			// approve the transfer of the collateral
-			await SUSD.approve(loanToken.address, collateralTokenSent, { from: accounts[2] });
+			await SUSD.approve(loanToken.address, withdrawAmount, { from: accounts[2] });
 
 			await expectRevert(
 				loanToken.marginTrade(
 					loanId, // bytes32 loanId
 					oneEth, // uint256 withdrawAmount
-					10000000, // uint256 collateralTokenSent
+					withdrawAmount, // uint256 collateralTokenSent
 					0,
 					RBTC.address, // address collateralTokenAddress
 					accounts[2], // address receiver

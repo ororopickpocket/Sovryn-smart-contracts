@@ -34,6 +34,8 @@ contract LoanClosingsWith is
 	//because it's not shared state anyway and only used by this contract
 	uint256 public constant paySwapExcessToBorrowerThreshold = 10000000000000;
 
+	uint256 public constant TINY_AMOUNT = 25 * 10**13;
+
 	enum CloseTypes { Deposit, Swap, Liquidation }
 
 	constructor() public {}
@@ -155,10 +157,20 @@ contract LoanClosingsWith is
 
 		Loan storage loanLocal = loans[loanId];
 		LoanParams storage loanParamsLocal = loanParams[loanLocal.loanParamsId];
+		//TODO should we skip this check if invoked from rollover ?
 		_checkAuthorized(loanLocal, loanParamsLocal);
 
 		/// Can't close more than the full principal.
 		loanCloseAmount = depositAmount > loanLocal.principal ? loanLocal.principal : depositAmount;
+
+		//close whole loan if tiny position will remain
+		uint256 remainingAmount = loanLocal.principal - loanCloseAmount;
+		if (remainingAmount > 0) {
+			remainingAmount = _getAmountInRbtc(loanParamsLocal.loanToken, remainingAmount);
+			if (remainingAmount <= TINY_AMOUNT) {
+				loanCloseAmount = loanLocal.principal;
+			}
+		}
 
 		uint256 loanCloseAmountLessInterest = _settleInterestToPrincipal(loanLocal, loanParamsLocal, loanCloseAmount, receiver);
 
@@ -231,6 +243,13 @@ contract LoanClosingsWith is
 
 		/// Can't swap more than collateral.
 		swapAmount = swapAmount > loanLocal.collateral ? loanLocal.collateral : swapAmount;
+
+		//close whole loan if tiny position will remain
+		if (loanLocal.collateral - swapAmount > 0) {
+			if (_getAmountInRbtc(loanParamsLocal.collateralToken, loanLocal.collateral - swapAmount) <= TINY_AMOUNT) {
+				swapAmount = loanLocal.collateral;
+			}
+		}
 
 		uint256 loanCloseAmountLessInterest;
 		if (swapAmount == loanLocal.collateral || returnTokenIsCollateral) {
@@ -429,13 +448,30 @@ contract LoanClosingsWith is
 	 * @return True if the amount is bigger than the threshold.
 	 * */
 	function worthTheTransfer(address asset, uint256 amount) internal returns (bool) {
-		(uint256 rbtcRate, uint256 rbtcPrecision) = IPriceFeeds(priceFeeds).queryRate(asset, address(wrbtcToken));
-		uint256 amountInRbtc = amount.mul(rbtcRate).div(rbtcPrecision);
+		uint256 amountInRbtc = _getAmountInRbtc(asset, amount);
 		emit swapExcess(amountInRbtc > paySwapExcessToBorrowerThreshold, amount, amountInRbtc, paySwapExcessToBorrowerThreshold);
 		return amountInRbtc > paySwapExcessToBorrowerThreshold;
 	}
 
 	/**
+	 * @dev returns amount of the asset converted to RBTC
+	 * @param asset the asset to be transferred
+	 * @param amount the amount to be transferred
+	 * @return amount in RBTC
+	 * */
+	function _getAmountInRbtc(address asset, uint256 amount) internal returns (uint256) {
+		(uint256 rbtcRate, uint256 rbtcPrecision) = IPriceFeeds(priceFeeds).queryRate(asset, address(wrbtcToken));
+		return amount.mul(rbtcRate).div(rbtcPrecision);
+	}
+
+	/**
+	 * swaps a share of a loan's collateral or the complete collateral in order to cover the principle.
+	 * @param loanLocal the loan
+	 * @param loanParamsLocal the loan parameters
+	 * @param swapAmount in case principalNeeded == 0 or !returnTokenIsCollateral, this is the amount which is going to be swapped.
+	 *  Else, swapAmount doesn't matter, because the amount of source tokens needed for the swap is estimated by the connector.
+	 * @param principalNeeded the required amount of destination tokens in order to cover the principle (only used if returnTokenIsCollateral)
+	 * @param returnTokenIsCollateral tells if the user wants to withdraw his remaining collateral + profit in collateral tokens
 	 * @notice Swaps a share of a loan's collateral or the complete collateral
 	 *   in order to cover the principle.
 	 *
