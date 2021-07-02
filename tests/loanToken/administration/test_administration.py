@@ -65,7 +65,7 @@ def test_lending_fee_setting(sovryn):
 def test_toggle_function_pause(accounts, loanToken, LoanToken, LoanTokenSettingsLowerAdmin, LoanTokenLogicStandard, loanTokenSettings, SUSD, open_margin_trade_position, lend_to_pool):
     
     lend_to_pool()
-    functionSignature = "marginTrade(bytes32,uint256,uint256,uint256,address,address,bytes)"
+    functionSignature = "marginTrade(bytes32,uint256,uint256,uint256,address,address,uint256,bytes)"
 
     # pause the given function and make sure the function can't be called anymore
     localLoanToken = Contract.from_abi("loanToken", address=loanToken.address, abi=LoanTokenLogicStandard.abi, owner=accounts[0])

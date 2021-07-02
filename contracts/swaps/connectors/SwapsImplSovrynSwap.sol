@@ -54,7 +54,6 @@ contract SwapsImplSovrynSwap is State, ISwapsImpl {
 	 *
 	 * @param sourceTokenAddress The address of the source tokens.
 	 * @param destTokenAddress The address of the destination tokens.
-	 * @param receiverAddress The address to receive the swapped tokens.
 	 * @param returnToSenderAddress The address to return unspent tokens to (when called by the protocol, it's always the protocol contract).
 	 * @param minSourceTokenAmount The minimum amount of source tokens to swapped (only considered if requiredDestTokens == 0).
 	 * @param maxSourceTokenAmount The maximum amount of source tokens to swapped.
@@ -63,7 +62,7 @@ contract SwapsImplSovrynSwap is State, ISwapsImpl {
 	function internalSwap(
 		address sourceTokenAddress,
 		address destTokenAddress,
-		address receiverAddress,
+		//address receiverAddress,
 		address returnToSenderAddress,
 		uint256 minSourceTokenAmount,
 		uint256 maxSourceTokenAmount,

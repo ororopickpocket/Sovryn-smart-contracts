@@ -499,10 +499,10 @@ describe("LiquidityMining", () => {
 
 		it("only owner or admin should be able to update pool token", async () => {
 			await liquidityMining.add(token2.address, new BN(1), false);
-			await expectRevert(liquidityMining.updateTokens([token2.address], [new BN(1)], false, {from: account1}), "unauthorized");
+			await expectRevert(liquidityMining.updateTokens([token2.address], [new BN(1)], false, { from: account1 }), "unauthorized");
 
 			await liquidityMining.addAdmin(account1);
-			await liquidityMining.updateTokens([token2.address], [new BN(1)], false, {from: account1});
+			await liquidityMining.updateTokens([token2.address], [new BN(1)], false, { from: account1 });
 		});
 	});
 
@@ -714,7 +714,6 @@ describe("LiquidityMining", () => {
 			expect(unlockedBalance).bignumber.equal(new BN(0));
 			expect(lockedBalance).bignumber.equal(new BN(0));
 		});
-
 	});
 
 	describe("withdraw", () => {

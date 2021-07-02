@@ -80,11 +80,13 @@ const verify_lending_result_and_itoken_price_change = async (
 		0, // no collateral token sent
 		collateralToken.address, // collateralTokenAddress
 		lender, // trader,
+		0,
 		"0x", // loanDataBytes (only required with ether),
 		{
 			value: value,
 		}
 	);
+
 	// time travel for interest to accumulate
 	await increaseTime(10000);
 

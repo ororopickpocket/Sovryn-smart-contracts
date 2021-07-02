@@ -34,7 +34,7 @@ contract SwapsImplLocal is State, ISwapsImpl {
 	function internalSwap(
 		address sourceTokenAddress,
 		address destTokenAddress,
-		address, /*receiverAddress*/
+		//address, /*receiverAddress*/
 		address returnToSenderAddress,
 		uint256 minSourceTokenAmount,
 		uint256 maxSourceTokenAmount,

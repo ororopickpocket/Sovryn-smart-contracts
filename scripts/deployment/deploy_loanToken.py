@@ -231,6 +231,7 @@ def testAffiliatesIntegration(acct, sovryn, loanTokenAddress, underlyingToken, c
         0, # no collateral token sent
         collateralToken.address, #collateralTokenAddress
         acct, #trader, 
+        0, # max slippage
         referrerAddress,
         b'', #loanDataBytes (only required with ether)
         {'value': value}
@@ -287,6 +288,7 @@ def testAffiliatesIntegration(acct, sovryn, loanTokenAddress, underlyingToken, c
         0, # no collateral token sent
         collateralToken.address, #collateralTokenAddress
         acct, #trader, 
+        0, # max slippage
         referrerAddress,
         b'', #loanDataBytes (only required with ether)
         {'value': value}

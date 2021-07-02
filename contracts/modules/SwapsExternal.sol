@@ -40,6 +40,7 @@ contract SwapsExternal is VaultController, SwapsUser {
 	function initialize(address target) external onlyOwner {
 		_setTarget(this.swapExternal.selector, target);
 		_setTarget(this.getSwapExpectedReturn.selector, target);
+		_setTarget(this.checkPriceDivergence.selector, target);
 	}
 
 	/**
@@ -66,9 +67,11 @@ contract SwapsExternal is VaultController, SwapsUser {
 		address returnToSender,
 		uint256 sourceTokenAmount,
 		uint256 requiredDestTokenAmount,
+		uint256 minReturn,
 		bytes memory swapData
 	) public payable nonReentrant returns (uint256 destTokenAmountReceived, uint256 sourceTokenAmountUsed) {
 		require(sourceTokenAmount != 0, "sourceTokenAmount == 0");
+		checkPriceDivergence(sourceToken, destToken, sourceTokenAmount, minReturn);
 
 		/// @dev Get payed value, be it rBTC or tokenized.
 		if (msg.value != 0) {
@@ -137,5 +140,15 @@ contract SwapsExternal is VaultController, SwapsUser {
 		uint256 sourceTokenAmount
 	) external view returns (uint256) {
 		return _swapsExpectedReturn(sourceToken, destToken, sourceTokenAmount);
+	}
+
+	function checkPriceDivergence(
+		address sourceToken,
+		address destToken,
+		uint256 sourceTokenAmount,
+		uint256 minReturn
+	) public view {
+		uint256 destTokenAmount = _swapsExpectedReturn(sourceToken, destToken, sourceTokenAmount);
+		require(destTokenAmount >= minReturn, "destTokenAmountReceived too low");
 	}
 }

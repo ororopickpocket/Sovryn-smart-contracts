@@ -1,5 +1,5 @@
 const { expect } = require("chai");
-const { expectRevert, BN } = require("@openzeppelin/test-helpers");
+const { expectRevert, BN, constants } = require("@openzeppelin/test-helpers");
 
 const {
 	margin_trading_sending_loan_tokens,
@@ -312,10 +312,52 @@ contract("LoanTokenTrading", (accounts) => {
 					1000, // no collateral token sent
 					RBTC.address, // collateralTokenAddress
 					accounts[1], // trader,
+					0,
 					"0x", // loanDataBytes (only required with ether)
 					{ from: accounts[2] }
 				),
-				"unauthorized use of existing loan"
+				"401 use of existing loan"
+			);
+		});
+
+		it("checkPriceDivergence should success if min position size is less than or equal to collateral", async () => {
+			await set_demand_curve(loanToken);
+			await SUSD.transfer(loanToken.address, wei("500", "ether"));
+
+			await loanToken.checkPriceDivergence(
+				new BN(2).mul(oneEth),
+				wei("0.01", "ether"),
+				wei("0.01", "ether"),
+				RBTC.address,
+				wei("0.02", "ether")
+			);
+		});
+
+		it("Check marginTrade with minPositionSize > 0 ", async () => {
+			await set_demand_curve(loanToken);
+			await SUSD.transfer(loanToken.address, wei("1000000", "ether"));
+			await RBTC.transfer(accounts[2], oneEth);
+			await RBTC.approve(loanToken.address, oneEth, { from: accounts[2] });
+
+			await loanToken.marginTrade(
+				"0x0", // loanId  (0 for new loans)
+				wei("2", "ether"), // leverageAmount
+				0, // loanTokenSent (SUSD)
+				1000, // collateral token sent
+				RBTC.address, // collateralTokenAddress (RBTC)
+				accounts[1], // trader,
+				2000,
+				"0x", // loanDataBytes (only required with ether)
+				{ from: accounts[2] }
+			);
+		});
+
+		it("checkPriceDivergence should revert if min position size is greater than collateral", async () => {
+			await set_demand_curve(loanToken);
+
+			await expectRevert(
+				loanToken.checkPriceDivergence(new BN(2).mul(oneEth), wei("2", "ether"), 0, RBTC.address, wei("1", "ether")),
+				"coll too low"
 			);
 		});
 	});

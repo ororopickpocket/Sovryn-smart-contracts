@@ -18,7 +18,7 @@ const SwapsExternal = artifacts.require("SwapsExternal");
 
 const PriceFeedsLocal = artifacts.require("PriceFeedsLocal");
 const TestSovrynSwap = artifacts.require("TestSovrynSwap");
-const SwapsImplLocal = artifacts.require("SwapsImplLocal");
+const SwapsImplSovrynSwap = artifacts.require("SwapsImplSovrynSwap");
 
 const Affiliates = artifacts.require("Affiliates");
 
@@ -61,7 +61,7 @@ contract("LoanTokenLending", (accounts) => {
 
 		feeds = await PriceFeedsLocal.new(rBTC.address, sovryn.address);
 		await feeds.setRates(underlyingToken.address, rBTC.address, wei("0.01", "ether"));
-		const swaps = await SwapsImplLocal.new();
+		const swaps = await SwapsImplSovrynSwap.new();
 		const sovrynSwapSimulator = await TestSovrynSwap.new(feeds.address);
 		await sovryn.setSovrynSwapContractRegistryAddress(sovrynSwapSimulator.address);
 		await sovryn.setSupportedTokens([underlyingToken.address, rBTC.address], [true, true]);

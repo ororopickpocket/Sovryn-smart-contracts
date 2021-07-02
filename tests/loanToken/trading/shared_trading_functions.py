@@ -34,6 +34,7 @@ def margin_trading_sending_loan_tokens(accounts, sovryn, loanToken, underlyingTo
         collateral_sent, # no collateral token sent
         collateralToken.address, #collateralTokenAddress
         accounts[0], #trader,
+        0,  # minReturn
         b'', #loanDataBytes (only required with ether)
         {'value': value}
     )
@@ -121,6 +122,7 @@ def margin_trading_sov_reward_payment(accounts, loanToken, underlyingToken, coll
         collateral_sent, # no collateral token sent
         collateralToken.address, #collateralTokenAddress
         trader, #trader,
+        0,  # minReturn
         b'', #loanDataBytes (only required with ether)
         {'value': value}
     )
@@ -140,8 +142,14 @@ makes a margin trade sending collateral tokens as collateral. therefore, only th
 process:
 1. send the margin trade tx with the passed parameter (NOTE: the token transfer needs to be approved already)
 2. TODO verify the trade event and balances are correct
-'''    
+'''
 def margin_trading_sending_collateral_tokens(accounts, sovryn, loanToken, underlyingToken, collateralToken, loanSize, collateralTokenSent, leverageAmount, value, priceFeeds):
+    # Users do not want to lose more than 2%
+    minReturn = (leverageAmount + 1) * collateralTokenSent * 0.98 / 1e18
+    
+    print("minReturn",minReturn)
+    print("loanSize",loanSize)
+    print("collateralTokenSent",collateralTokenSent/1e18)
     
     get_estimated_margin_details(loanToken, collateralToken, loanSize, collateralTokenSent, leverageAmount)
     (rate, precision) = priceFeeds.queryRate(underlyingToken.address, collateralToken.address)
@@ -153,6 +161,7 @@ def margin_trading_sending_collateral_tokens(accounts, sovryn, loanToken, underl
         collateralTokenSent, 
         collateralToken.address, #collateralTokenAddress
         accounts[0], #trader, 
+        0,  # minReturn
         b'', #loanDataBytes (only required with ether),
         {'value' : value}
     )
@@ -176,6 +185,7 @@ def margin_trading_sending_collateral_tokens_sov_reward_payment(trader, loanToke
         collateralTokenSent,
         collateralToken.address,  # collateralTokenAddress
         trader,  # trader,
+        0,  # minReturn
         b'',  # loanDataBytes (only required with ether),
         {'from': trader, 'value': value}
     )

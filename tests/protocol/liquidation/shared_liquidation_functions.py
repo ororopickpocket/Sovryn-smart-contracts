@@ -88,6 +88,7 @@ def prepare_liquidation(lender, borrower, liquidator, loan_token_sent, loanToken
         0,  # no collateral token sent
         collateralToken.address,  # collateralTokenAddress
         borrower,  # trader,
+        0,  # minReturn
         b'',  # loanDataBytes (only required with ether)
         {'from': borrower, 'value': value}
     )

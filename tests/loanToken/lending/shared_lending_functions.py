@@ -76,6 +76,7 @@ def verify_lending_result_and_itoken_price_change(accounts, underlyingToken, col
         0,  # no collateral token sent
         collateralToken.address,  # collateralTokenAddress
         accounts[0],  # trader,
+        0,  # minReturn
         b'',  # loanDataBytes (only required with ether)
         {'value': value}
     )

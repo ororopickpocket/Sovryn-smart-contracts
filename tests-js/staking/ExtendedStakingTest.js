@@ -663,7 +663,6 @@ contract("Staking", (accounts) => {
 	});
 
 	describe("withdraw", () => {
-
 		it("Amount of tokens to be withdrawn needs to be bigger than 0", async () => {
 			let amount = "1000";
 			let duration = new BN(TWO_WEEKS).mul(new BN(2));
@@ -999,7 +998,6 @@ contract("Staking", (accounts) => {
 			balance = await staking.balanceOf_MultipliedByTwo.call(root);
 			expect(balance.toNumber()).to.be.equal(amount * 2);
 		});
-
 	});
 
 	async function getTimeFromKickoff(delay) {

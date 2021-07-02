@@ -6,7 +6,7 @@
 pragma solidity 0.5.17;
 pragma experimental ABIEncoderV2;
 
-import "./LoanTokenLogicLM.sol";
+import "./LoanTokenLogicStandard.sol";
 
 contract LoanTokenLogicWrbtc is LoanTokenLogicStandard {
 	function mintWithBTC(address receiver, bool useLM) external payable nonReentrant returns (uint256 mintAmount) {

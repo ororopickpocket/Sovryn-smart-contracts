@@ -39,5 +39,4 @@ contract LoanTokenLogicLM is LoanTokenLogicStandard {
 			_safeTransfer(loanTokenAddress, receiver, redeemed, "asset transfer failed");
 		}
 	}
-
 }

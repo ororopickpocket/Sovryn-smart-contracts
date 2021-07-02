@@ -23,6 +23,7 @@ def setup_rollover_test(RBTC, SUSD, accounts, chain, loanToken, set_demand_curve
         0,  # no collateral token sent
         RBTC.address,  # collateralTokenAddress
         borrower,  # trader,
+        0,  # maxSlippage
         b'',  # loanDataBytes (only required with ether)
         {'from': borrower}
     )

@@ -864,7 +864,7 @@ contract("Vesting", (accounts) => {
 
 			await staking.addAdmin(a1);
 			//governance withdraw until duration must withdraw all staked tokens without fees
-			let tx = await staking.governanceWithdrawVesting(vesting.address, root, {from: a1});
+			let tx = await staking.governanceWithdrawVesting(vesting.address, root, { from: a1 });
 
 			expectEvent(tx, "VestingTokensWithdrawn", {
 				vesting: vesting.address,
@@ -880,7 +880,6 @@ contract("Vesting", (accounts) => {
 			let vestingBalance = await staking.balanceOf(vesting.address);
 			expect(vestingBalance).to.be.bignumber.equal(new BN(0));
 		});
-
 	});
 
 	describe("collectDividends", async () => {
@@ -1002,5 +1001,4 @@ contract("Vesting", (accounts) => {
 			await vesting.migrateToNewStakingContract({ from: a1 });
 		});
 	});
-
 });

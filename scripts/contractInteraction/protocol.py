@@ -71,6 +71,13 @@ def replaceSwapsImplSovrynSwap():
     data = sovryn.setSwapsImplContract.encode_input(swaps.address)
     sendWithMultisig(conf.contracts['multisig'], sovryn.address, data, conf.acct)
 
+def replaceSwapsUser():
+    print("replacing swaps user")
+    swapsUser = conf.acct.deploy(SwapsUser)
+    sovryn = Contract.from_abi("sovryn", address=conf.contracts['sovrynProtocol'], abi=interface.ISovrynBrownie.abi, owner=conf.acct)
+    data = sovryn.replaceContract.encode_input(swapsUser.address)
+    sendWithMultisig(conf.contracts['multisig'], sovryn.address, data, conf.acct)
+
 def setLendingFee(fee):
     sovryn = Contract.from_abi("sovryn", address=conf.contracts['sovrynProtocol'], abi=interface.ISovrynBrownie.abi, owner=conf.acct)
     data = sovryn.setLendingFeePercent.encode_input(fee)

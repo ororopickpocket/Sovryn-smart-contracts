@@ -40,8 +40,8 @@ contract StakingMockup is Staking {
 	}
 
 	/**
-	* @dev We need this function to simulate zero delegate checkpoint value.
-	*/
+	 * @dev We need this function to simulate zero delegate checkpoint value.
+	 */
 	function setDelegateStake(
 		address delegatee,
 		uint256 lockedTS,
@@ -60,5 +60,4 @@ contract StakingMockup is Staking {
 		bytes32 codeHash = _getCodeHash(_contract);
 		return vestingCodeHashes[codeHash];
 	}
-
 }

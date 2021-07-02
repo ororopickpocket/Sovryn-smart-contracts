@@ -139,6 +139,7 @@ const prepare_liquidation = async (
 		0, // no collateral token sent
 		collateralToken.address, // collateralTokenAddress
 		borrower, // trader,
+		0,
 		"0x", // loanDataBytes (only required with ether)
 		{ from: borrower, value: value }
 	);

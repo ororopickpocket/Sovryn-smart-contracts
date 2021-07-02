@@ -120,6 +120,7 @@ contract PriceFeeds is Constants, Ownable {
 		if (globalPricingPaused) {
 			return 0;
 		}
+
 		(uint256 rate, uint256 precision) = _queryRate(sourceToken, destToken);
 
 		destAmount = sourceAmount.mul(rate).div(precision);
@@ -155,11 +156,9 @@ contract PriceFeeds is Constants, Ownable {
 
 		sourceToDestSwapRate = destAmount.mul(precision).div(sourceAmount);
 
-		uint256 spreadValue = sourceToDestSwapRate > rate ? sourceToDestSwapRate - rate : rate - sourceToDestSwapRate;
-
-		if (spreadValue != 0) {
+		if (rate > sourceToDestSwapRate) {
+			uint256 spreadValue = rate - sourceToDestSwapRate;
 			spreadValue = spreadValue.mul(10**20).div(sourceToDestSwapRate);
-
 			require(spreadValue <= maxSlippage, "price disagreement");
 		}
 	}
@@ -353,9 +352,11 @@ contract PriceFeeds is Constants, Ownable {
 	 * @param isPaused The new status of pause (true/false).
 	 * */
 	function setGlobalPricingPaused(bool isPaused) external onlyOwner {
-		globalPricingPaused = isPaused;
+		if (globalPricingPaused != isPaused) {
+			globalPricingPaused = isPaused;
 
-		emit GlobalPricingPaused(msg.sender, isPaused);
+			emit GlobalPricingPaused(msg.sender, isPaused);
+		}
 	}
 
 	/*

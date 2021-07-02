@@ -2,7 +2,6 @@ const { assert } = require("chai");
 const LoanTokenLogicStandard = artifacts.require("LoanTokenLogicStandard");
 const sovrynProtocol = artifacts.require("sovrynProtocol");
 const LoanToken = artifacts.require("LoanToken");
-const LockedSOVFailedMockup = artifacts.require("LockedSOVFailedMockup");
 const LockedSOV = artifacts.require("LockedSOV");
 const StakingLogic = artifacts.require("Staking");
 const StakingProxy = artifacts.require("StakingProxy");
@@ -103,7 +102,9 @@ contract("Affiliates", (accounts) => {
 
 		// Creating the instance of newLockedSOV Contract.
 		await sovryn.setLockedSOVAddress(
-			(await LockedSOV.new(tokenSOV.address, vestingRegistry.address, cliff, duration, [owner])).address
+			(
+				await LockedSOV.new(tokenSOV.address, vestingRegistry.address, cliff, duration, [owner])
+			).address
 		);
 		lockedSOV = await LockedSOV.at(await sovryn.lockedSOVAddress());
 	});
@@ -191,6 +192,7 @@ contract("Affiliates", (accounts) => {
 			0, //
 			testWrbtc.address, // collateralTokenAddress
 			trader, // trader
+			0, // max slippage
 			referrer, // referrer address
 			"0x", // loanDataBytes (only required with ether)
 			{ from: trader }
@@ -246,6 +248,7 @@ contract("Affiliates", (accounts) => {
 			0, //
 			testWrbtc.address, // collateralTokenAddress
 			trader, // trader
+			0, // max slippage
 			referrer, // referrer address
 			"0x", // loanDataBytes (only required with ether)
 			{ from: trader }
