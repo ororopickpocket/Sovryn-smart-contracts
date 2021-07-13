@@ -10,6 +10,7 @@ import "../core/State.sol";
 import "../mixins/VaultController.sol";
 import "../swaps/SwapsUser.sol";
 import "../swaps/ISwapsImpl.sol";
+import "./ModuleCommonFunctionalities.sol";
 
 /**
  * @title Swaps External contract.
@@ -19,7 +20,7 @@ import "../swaps/ISwapsImpl.sol";
  *
  * This contract contains functions to calculate and execute swaps.
  * */
-contract SwapsExternal is VaultController, SwapsUser {
+contract SwapsExternal is VaultController, SwapsUser, ModuleCommonFunctionalities {
 	/**
 	 * @notice Empty public constructor.
 	 * */
@@ -67,7 +68,7 @@ contract SwapsExternal is VaultController, SwapsUser {
 		uint256 sourceTokenAmount,
 		uint256 requiredDestTokenAmount,
 		bytes memory swapData
-	) public payable nonReentrant returns (uint256 destTokenAmountReceived, uint256 sourceTokenAmountUsed) {
+	) public payable nonReentrant whenNotPaused returns (uint256 destTokenAmountReceived, uint256 sourceTokenAmountUsed) {
 		require(sourceTokenAmount != 0, "sourceTokenAmount == 0");
 
 		/// @dev Get payed value, be it rBTC or tokenized.

@@ -11,6 +11,7 @@ import "../events/LoanOpeningsEvents.sol";
 import "../mixins/VaultController.sol";
 import "../mixins/InterestUser.sol";
 import "../swaps/SwapsUser.sol";
+import "./ModuleCommonFunctionalities.sol";
 
 /**
  * @title Loan Openings contract.
@@ -20,7 +21,7 @@ import "../swaps/SwapsUser.sol";
  *
  * This contract contains functions to borrow and trade.
  * */
-contract LoanOpenings is LoanOpeningsEvents, VaultController, InterestUser, SwapsUser {
+contract LoanOpenings is LoanOpeningsEvents, VaultController, InterestUser, SwapsUser, ModuleCommonFunctionalities {
 	constructor() public {}
 
 	/**
@@ -79,7 +80,7 @@ contract LoanOpenings is LoanOpeningsEvents, VaultController, InterestUser, Swap
 		address[4] calldata sentAddresses,
 		uint256[5] calldata sentValues,
 		bytes calldata loanDataBytes
-	) external payable nonReentrant returns (uint256 newPrincipal, uint256 newCollateral) {
+	) external payable nonReentrant whenNotPaused returns (uint256 newPrincipal, uint256 newCollateral) {
 		require(msg.value == 0 || loanDataBytes.length != 0, "loanDataBytes required with ether");
 
 		/// Only callable by loan pools.
@@ -119,7 +120,7 @@ contract LoanOpenings is LoanOpeningsEvents, VaultController, InterestUser, Swap
 		bytes32 loanId,
 		address delegated,
 		bool toggle
-	) external {
+	) external whenNotPaused {
 		require(loans[loanId].borrower == msg.sender, "unauthorized");
 
 		_setDelegatedManager(loanId, msg.sender, delegated, toggle);

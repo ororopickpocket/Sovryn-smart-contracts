@@ -13,6 +13,7 @@ import "../mixins/VaultController.sol";
 import "../mixins/InterestUser.sol";
 import "../mixins/LiquidationHelper.sol";
 import "../swaps/SwapsUser.sol";
+import "./ModuleCommonFunctionalities.sol";
 
 /**
  * @title Loan Maintenance contract.
@@ -23,7 +24,15 @@ import "../swaps/SwapsUser.sol";
  * This contract contains functions to query loan data and to modify its status
  * by withdrawing or depositing collateral.
  * */
-contract LoanMaintenance is LoanOpeningsEvents, LoanMaintenanceEvents, VaultController, InterestUser, SwapsUser, LiquidationHelper {
+contract LoanMaintenance is
+	LoanOpeningsEvents,
+	LoanMaintenanceEvents,
+	VaultController,
+	InterestUser,
+	SwapsUser,
+	LiquidationHelper,
+	ModuleCommonFunctionalities
+{
 	struct LoanReturnData {
 		bytes32 loanId;
 		address loanToken;
@@ -83,7 +92,7 @@ contract LoanMaintenance is LoanOpeningsEvents, LoanMaintenanceEvents, VaultCont
 	function depositCollateral(
 		bytes32 loanId,
 		uint256 depositAmount /// must match msg.value if ether is sent
-	) external payable nonReentrant {
+	) external payable nonReentrant whenNotPaused {
 		require(depositAmount != 0, "depositAmount is 0");
 		Loan storage loanLocal = loans[loanId];
 		LoanParams storage loanParamsLocal = loanParams[loanLocal.loanParamsId];
@@ -118,7 +127,7 @@ contract LoanMaintenance is LoanOpeningsEvents, LoanMaintenanceEvents, VaultCont
 		bytes32 loanId,
 		address receiver,
 		uint256 withdrawAmount
-	) external nonReentrant returns (uint256 actualWithdrawAmount) {
+	) external nonReentrant whenNotPaused returns (uint256 actualWithdrawAmount) {
 		require(withdrawAmount != 0, "withdrawAmount is 0");
 		Loan storage loanLocal = loans[loanId];
 		LoanParams storage loanParamsLocal = loanParams[loanLocal.loanParamsId];
@@ -157,7 +166,7 @@ contract LoanMaintenance is LoanOpeningsEvents, LoanMaintenanceEvents, VaultCont
 	 *
 	 * @param loanToken The loan token address.
 	 * */
-	function withdrawAccruedInterest(address loanToken) external {
+	function withdrawAccruedInterest(address loanToken) external whenNotPaused {
 		/// Pay outstanding interest to lender.
 		_payInterest(
 			msg.sender, /// Lender.
@@ -181,7 +190,7 @@ contract LoanMaintenance is LoanOpeningsEvents, LoanMaintenanceEvents, VaultCont
 		uint256 depositAmount,
 		bool useCollateral,
 		bytes calldata /// loanDataBytes, for future use.
-	) external payable nonReentrant returns (uint256 secondsExtended) {
+	) external payable nonReentrant whenNotPaused returns (uint256 secondsExtended) {
 		require(depositAmount != 0, "depositAmount is 0");
 		Loan storage loanLocal = loans[loanId];
 		LoanParams storage loanParamsLocal = loanParams[loanLocal.loanParamsId];
@@ -259,7 +268,7 @@ contract LoanMaintenance is LoanOpeningsEvents, LoanMaintenanceEvents, VaultCont
 		bytes32 loanId,
 		address receiver,
 		uint256 withdrawAmount
-	) external nonReentrant returns (uint256 secondsReduced) {
+	) external nonReentrant whenNotPaused returns (uint256 secondsReduced) {
 		require(withdrawAmount != 0, "withdrawAmount is 0");
 		Loan storage loanLocal = loans[loanId];
 		LoanParams storage loanParamsLocal = loanParams[loanLocal.loanParamsId];

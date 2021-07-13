@@ -14,6 +14,7 @@ import "../mixins/LiquidationHelper.sol";
 import "../swaps/SwapsUser.sol";
 import "../interfaces/ILoanPool.sol";
 import "../mixins/RewardHelper.sol";
+import "./ModuleCommonFunctionalities.sol";
 
 /**
  * @title LoanClosingsWith contract.
@@ -28,7 +29,8 @@ contract LoanClosingsWith is
 	VaultController,
 	InterestUser,
 	SwapsUser, /*LiquidationHelper,*/
-	RewardHelper
+	RewardHelper,
+	ModuleCommonFunctionalities
 {
 	//0.00001 BTC, would be nicer in State.sol, but would require a redeploy of the complete protocol, so adding it here instead
 	//because it's not shared state anyway and only used by this contract
@@ -71,6 +73,7 @@ contract LoanClosingsWith is
 		public
 		payable
 		nonReentrant
+		whenNotPaused
 		returns (
 			uint256 loanCloseAmount,
 			uint256 withdrawAmount,
@@ -109,6 +112,7 @@ contract LoanClosingsWith is
 	)
 		public
 		nonReentrant
+		whenNotPaused
 		returns (
 			uint256 loanCloseAmount,
 			uint256 withdrawAmount,
