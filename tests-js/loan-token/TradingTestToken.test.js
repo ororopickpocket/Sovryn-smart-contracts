@@ -315,7 +315,7 @@ contract("LoanTokenTrading", (accounts) => {
 					"0x", // loanDataBytes (only required with ether)
 					{ from: accounts[2] }
 				),
-				"unauthorized use of existing loan"
+				"unauthorized"
 			);
 		});
 	});

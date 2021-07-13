@@ -327,7 +327,7 @@ contract("LoanTokenBorrowing", (accounts) => {
 					"0x0", // bytes memory loanDataBytes
 					{ from: accounts[2] }
 				),
-				"unauthorized use of existing loan"
+				"unauthorized"
 			);
 		});
 

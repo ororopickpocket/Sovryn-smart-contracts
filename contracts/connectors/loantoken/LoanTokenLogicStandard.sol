@@ -61,7 +61,7 @@ contract LoanTokenLogicStandard is LoanTokenSettingsLowerAdmin {
 	 * @notice Fallback function is to react to receiving value (rBTC).
 	 * */
 	function() external {
-		revert("loan token logic - fallback not allowed");
+		revert("fallback not allowed"); //loan token logic - fallback not allowed
 	}
 
 	/* Public functions */
@@ -220,7 +220,7 @@ contract LoanTokenLogicStandard is LoanTokenSettingsLowerAdmin {
 		require(collateralTokenAddress != address(0) || msg.value != 0 || loanId != 0, "9");
 
 		/// @dev Ensure authorized use of existing loan.
-		require(loanId == 0 || msg.sender == borrower, "unauthorized use of existing loan");
+		require(loanId == 0 || msg.sender == borrower, "unauthorized"); //unauthorized use of existing loan
 
 		if (collateralTokenAddress == address(0)) {
 			collateralTokenAddress = wrbtcTokenAddress;
@@ -322,7 +322,7 @@ contract LoanTokenLogicStandard is LoanTokenSettingsLowerAdmin {
 		require(collateralTokenAddress != loanTokenAddress, "11");
 
 		/// @dev Ensure authorized use of existing loan.
-		require(loanId == 0 || msg.sender == trader, "unauthorized use of existing loan");
+		require(loanId == 0 || msg.sender == trader, "unauthorized"); //unauthorized use of existing loan
 
 		/// Temporary: limit transaction size.
 		if (transactionLimit[collateralTokenAddress] > 0) require(collateralTokenSent <= transactionLimit[collateralTokenAddress]);
@@ -943,7 +943,7 @@ contract LoanTokenLogicStandard is LoanTokenSettingsLowerAdmin {
 			/// @dev Get the oracle rate from collateral -> loan
 			(uint256 collateralToLoanRate, uint256 collateralToLoanPrecision) =
 				FeedsLike(ProtocolLike(sovrynContractAddress).priceFeeds()).queryRate(collateralTokenAddress, loanTokenAddress);
-			require((collateralToLoanRate != 0) && (collateralToLoanPrecision != 0), "invalid exchange rate for the collateral token");
+			require((collateralToLoanRate != 0) && (collateralToLoanPrecision != 0), "invalid"); //exchange rate for the collateral token
 
 			/// @dev Compute the loan token amount with the oracle rate.
 			uint256 loanTokenAmount = collateralTokenSent.mul(collateralToLoanRate).div(collateralToLoanPrecision);
@@ -1482,7 +1482,7 @@ contract LoanTokenLogicStandard is LoanTokenSettingsLowerAdmin {
 
 	function _burnFromLM(uint256 burnAmount) internal returns (uint256) {
 		uint256 balanceOnLM = ILiquidityMining(liquidityMiningAddress).getUserPoolTokenBalance(address(this), msg.sender);
-		require(balanceOnLM.add(balanceOf(msg.sender)) >= burnAmount, "not enough balance");
+		require(balanceOnLM.add(balanceOf(msg.sender)) >= burnAmount, "low bal"); //not enough balance
 
 		if (balanceOnLM > 0) {
 			//withdraw pool tokens and LM rewards to the passed address

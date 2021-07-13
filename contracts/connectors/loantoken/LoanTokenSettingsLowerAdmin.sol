@@ -39,6 +39,7 @@ contract LoanTokenSettingsLowerAdmin is AdvancedToken {
 	/* Events */
 
 	event SetTransactionLimits(address[] addresses, uint256[] limits);
+	event ToggleFunctionPaused(string functionId, bool prevFlag, bool newFlag);
 
 	/* Functions */
 
@@ -188,6 +189,7 @@ contract LoanTokenSettingsLowerAdmin is AdvancedToken {
 		assembly {
 			sstore(slot, isPaused)
 		}
+		emit ToggleFunctionPaused(funcId, !isPaused, isPaused);
 	}
 
 	/**
