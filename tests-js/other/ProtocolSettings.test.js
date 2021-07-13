@@ -284,7 +284,7 @@ contract("ProtocolSettings", (accounts) => {
 		// Should successfully change rebate percent
 		it("Test set rebate percent", async () => {
 			const new_percent = new BN(2).mul(oneEth);
-			const old_percent = await sovryn.feeRebatePercent();
+			const old_percent = await sovryn.getFeeRebatePercent();
 
 			const dest = sovryn.address;
 			const val = 0;
@@ -299,7 +299,7 @@ contract("ProtocolSettings", (accounts) => {
 			expect(event["sender"] == multisig.address).to.be.true;
 			expect(event["oldRebatePercent"] == old_percent.toString()).to.be.true;
 			expect(event["newRebatePercent"] == new_percent.toString()).to.be.true;
-			expect((await sovryn.feeRebatePercent()).eq(new_percent)).to.be.true;
+			expect((await sovryn.getFeeRebatePercent()).eq(new_percent)).to.be.true;
 		});
 
 		// Should fail to change rebate percent by unauthorized user

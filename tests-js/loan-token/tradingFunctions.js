@@ -5,6 +5,7 @@ const { blockNumber, increaseTime } = require("../Utils/Ethereum");
 const LoanOpenings = artifacts.require("LoanOpenings");
 const SwapsEvents = artifacts.require("SwapsEvents");
 const LoanClosingsEvents = artifacts.require("LoanClosingsEvents");
+const LockedSOVMockup = artifacts.require("LockedSOVMockup");
 
 const wei = web3.utils.toWei;
 const oneEth = new BN(wei("1", "ether"));
@@ -118,7 +119,7 @@ const margin_trading_sending_loan_tokens = async (accounts, sovryn, loanToken, u
 	expect(loan["maxSeizable"]).to.eq("0");
 };
 
-const margin_trading_sov_reward_payment = async (accounts, loanToken, underlyingToken, collateralToken, SOV, FeesEvents) => {
+const margin_trading_sov_reward_payment = async (accounts, loanToken, underlyingToken, collateralToken, SOV, FeesEvents, sovryn) => {
 	// preparation
 	const loan_token_sent = oneEth;
 	await underlyingToken.mint(loanToken.address, loan_token_sent.mul(new BN(3)));
@@ -129,7 +130,8 @@ const margin_trading_sov_reward_payment = async (accounts, loanToken, underlying
 	// send the transaction
 	const leverage_amount = oneEth.mul(BN2);
 	const collateral_sent = new BN(0);
-	const sov_initial_balance = await SOV.balanceOf(trader);
+	lockedSOV = await LockedSOVMockup.at(await sovryn.lockedSOVAddress());
+	const sov_initial_balance = (await SOV.balanceOf(trader)).add(await lockedSOV.getLockedBalance(trader));
 
 	const { receipt } = await loanToken.marginTrade(
 		constants.ZERO_BYTES32, // loanId  (0 for new loans)
@@ -144,7 +146,68 @@ const margin_trading_sov_reward_payment = async (accounts, loanToken, underlying
 	await increaseTime(10 * 24 * 60 * 60);
 
 	const loan_id = constants.ZERO_BYTES32; // is zero because is a new loan
-	await verify_sov_reward_payment(receipt.rawLogs, FeesEvents, SOV, trader, loan_id, sov_initial_balance, 1);
+	await verify_sov_reward_payment(
+		receipt.rawLogs,
+		FeesEvents,
+		SOV,
+		trader,
+		loan_id,
+		sov_initial_balance,
+		1,
+		underlyingToken.address,
+		collateralToken.address,
+		sovryn
+	);
+};
+
+const margin_trading_sov_reward_payment_with_special_rebates = async (
+	accounts,
+	loanToken,
+	underlyingToken,
+	collateralToken,
+	SOV,
+	FeesEvents,
+	sovryn
+) => {
+	// preparation
+	const loan_token_sent = oneEth;
+	await underlyingToken.mint(loanToken.address, loan_token_sent.mul(new BN(3)));
+	const trader = accounts[0];
+	await underlyingToken.mint(trader, loan_token_sent);
+	await underlyingToken.approve(loanToken.address, loan_token_sent);
+	await sovryn.setSpecialRebates(underlyingToken.address, collateralToken.address, wei("300", "ether"));
+
+	// send the transaction
+	const leverage_amount = oneEth.mul(BN2);
+	const collateral_sent = new BN(0);
+	lockedSOV = await LockedSOVMockup.at(await sovryn.lockedSOVAddress());
+	const sov_initial_balance = (await SOV.balanceOf(trader)).add(await lockedSOV.getLockedBalance(trader));
+
+	const { receipt } = await loanToken.marginTrade(
+		constants.ZERO_BYTES32, // loanId  (0 for new loans)
+		leverage_amount.toString(), // leverageAmount
+		loan_token_sent.toString(), // loanTokenSent
+		collateral_sent.toString(), // no collateral token sent
+		collateralToken.address, // collateralTokenAddress
+		trader, // trader,
+		"0x" // loanDataBytes (only required with ether)
+	);
+
+	await increaseTime(10 * 24 * 60 * 60);
+
+	const loan_id = constants.ZERO_BYTES32; // is zero because is a new loan
+	await verify_sov_reward_payment(
+		receipt.rawLogs,
+		FeesEvents,
+		SOV,
+		trader,
+		loan_id,
+		sov_initial_balance,
+		1,
+		underlyingToken.address,
+		collateralToken.address,
+		sovryn
+	);
 };
 
 /*
@@ -205,12 +268,14 @@ const margin_trading_sending_collateral_tokens = async (
 const margin_trading_sending_collateral_tokens_sov_reward_payment = async (
 	trader,
 	loanToken,
+	underlyingToken,
 	collateralToken,
 	collateralTokenSent,
 	leverageAmount,
 	value,
 	FeesEvents,
-	SOV
+	SOV,
+	sovryn
 ) => {
 	const sov_initial_balance = await SOV.balanceOf(trader);
 	const { receipt } = await loanToken.marginTrade(
@@ -230,7 +295,63 @@ const margin_trading_sending_collateral_tokens_sov_reward_payment = async (
 	await increaseTime(10 * 24 * 60 * 60);
 
 	const loan_id = constants.ZERO_BYTES32; // is zero because is a new loan
-	verify_sov_reward_payment(receipt.rawLogs, FeesEvents, SOV, trader, loan_id, sov_initial_balance, 1);
+	await verify_sov_reward_payment(
+		receipt.rawLogs,
+		FeesEvents,
+		SOV,
+		trader,
+		loan_id,
+		sov_initial_balance,
+		1,
+		underlyingToken.address,
+		collateralToken.address,
+		sovryn
+	);
+};
+
+const margin_trading_sending_collateral_tokens_sov_reward_payment_with_special_rebates = async (
+	trader,
+	loanToken,
+	underlyingToken,
+	collateralToken,
+	collateralTokenSent,
+	leverageAmount,
+	value,
+	FeesEvents,
+	SOV,
+	sovryn
+) => {
+	await sovryn.setSpecialRebates(underlyingToken.address, collateralToken.address, wei("30", "ether"));
+	const sov_initial_balance = await SOV.balanceOf(trader);
+	const { receipt } = await loanToken.marginTrade(
+		constants.ZERO_BYTES32,
+		leverageAmount,
+		0,
+		collateralTokenSent,
+		collateralToken.address,
+		trader,
+		"0x",
+		{
+			from: trader,
+			value: value,
+		}
+	);
+
+	await increaseTime(10 * 24 * 60 * 60);
+
+	const loan_id = constants.ZERO_BYTES32; // is zero because is a new loan
+	await verify_sov_reward_payment(
+		receipt.rawLogs,
+		FeesEvents,
+		SOV,
+		trader,
+		loan_id,
+		sov_initial_balance,
+		1,
+		underlyingToken.address,
+		collateralToken.address,
+		sovryn
+	);
 };
 
 /*
@@ -347,9 +468,68 @@ const close_complete_margin_trade_sov_reward_payment = async (
 	// complete closure means the whole collateral is swapped
 	const swap_amount = initial_loan["collateral"];
 
-	const sov_initial_balance = await SOV.balanceOf(trader);
+	lockedSOV = await LockedSOVMockup.at(await sovryn.lockedSOVAddress());
+	const sov_initial_balance = (await SOV.balanceOf(trader)).add(await lockedSOV.getLockedBalance(trader));
 	const { receipt } = await sovryn.closeWithSwap(loan_id, trader, swap_amount, return_token_is_collateral, "0x", { from: trader });
-	await verify_sov_reward_payment(receipt.rawLogs, FeesEvents, SOV, trader, loan_id, sov_initial_balance, 2);
+	await verify_sov_reward_payment(
+		receipt.rawLogs,
+		FeesEvents,
+		SOV,
+		trader,
+		loan_id,
+		sov_initial_balance,
+		2,
+		SUSD.address,
+		RBTC.address,
+		sovryn
+	);
+};
+
+const close_complete_margin_trade_sov_reward_payment_with_special_rebates = async (
+	sovryn,
+	set_demand_curve,
+	lend_to_pool,
+	open_margin_trade_position,
+	return_token_is_collateral,
+	FeesEvents,
+	loanToken,
+	RBTC,
+	WRBTC,
+	SUSD,
+	SOV,
+	accounts
+) => {
+	// prepare the test
+	await set_demand_curve(loanToken);
+	await lend_to_pool(loanToken, SUSD, accounts[0]);
+	await sovryn.setSpecialRebates(SUSD.address, RBTC.address, wei("30", "ether"));
+	await sovryn.setSpecialRebates(RBTC.address, SUSD.address, wei("30", "ether"));
+	const [loan_id, trader, loan_token_sent] = await open_margin_trade_position(loanToken, RBTC, WRBTC, SUSD, accounts[1]);
+
+	await increaseTime(10 * 24 * 60 * 60);
+	const initial_loan = await sovryn.getLoan(loan_id);
+
+	// needs to be called by the trader
+	expectRevert(sovryn.closeWithSwap(loan_id, trader, loan_token_sent, return_token_is_collateral, "0x"), "unauthorized");
+
+	// complete closure means the whole collateral is swapped
+	const swap_amount = initial_loan["collateral"];
+
+	lockedSOV = await LockedSOVMockup.at(await sovryn.lockedSOVAddress());
+	const sov_initial_balance = (await SOV.balanceOf(trader)).add(await lockedSOV.getLockedBalance(trader));
+	const { receipt } = await sovryn.closeWithSwap(loan_id, trader, swap_amount, return_token_is_collateral, "0x", { from: trader });
+	await verify_sov_reward_payment(
+		receipt.rawLogs,
+		FeesEvents,
+		SOV,
+		trader,
+		loan_id,
+		sov_initial_balance,
+		2,
+		SUSD.address,
+		RBTC.address,
+		sovryn
+	);
 };
 
 /*
@@ -422,9 +602,64 @@ const close_partial_margin_trade_sov_reward_payment = async (
 
 	const swap_amount = new BN(initial_loan["collateral"]).mul(new BN(80).mul(oneEth)).div(hunEth);
 
-	const sov_initial_balance = await SOV.balanceOf(trader);
+	lockedSOV = await LockedSOVMockup.at(await sovryn.lockedSOVAddress());
+	const sov_initial_balance = (await SOV.balanceOf(trader)).add(await lockedSOV.getLockedBalance(trader));
 	const { receipt } = await sovryn.closeWithSwap(loan_id, trader, swap_amount, return_token_is_collateral, "0x", { from: trader });
-	await verify_sov_reward_payment(receipt.rawLogs, FeesEvents, SOV, trader, loan_id, sov_initial_balance, 2);
+	await verify_sov_reward_payment(
+		receipt.rawLogs,
+		FeesEvents,
+		SOV,
+		trader,
+		loan_id,
+		sov_initial_balance,
+		2,
+		SUSD.address,
+		RBTC.address,
+		sovryn
+	);
+};
+
+const close_partial_margin_trade_sov_reward_payment_with_special_rebates = async (
+	sovryn,
+	set_demand_curve,
+	lend_to_pool,
+	open_margin_trade_position,
+	return_token_is_collateral,
+	FeesEvents,
+	loanToken,
+	RBTC,
+	WRBTC,
+	SUSD,
+	SOV,
+	accounts
+) => {
+	// prepare the test
+	await set_demand_curve(loanToken);
+	await lend_to_pool(loanToken, SUSD, accounts[0]);
+	await sovryn.setSpecialRebates(SUSD.address, RBTC.address, wei("30", "ether"));
+	await sovryn.setSpecialRebates(RBTC.address, SUSD.address, wei("30", "ether"));
+	const [loan_id, trader] = await open_margin_trade_position(loanToken, RBTC, WRBTC, SUSD, accounts[1]);
+
+	await increaseTime(10 * 24 * 60 * 60);
+	const initial_loan = await sovryn.getLoan(loan_id);
+
+	const swap_amount = new BN(initial_loan["collateral"]).mul(new BN(80).mul(oneEth)).div(hunEth);
+
+	lockedSOV = await LockedSOVMockup.at(await sovryn.lockedSOVAddress());
+	const sov_initial_balance = (await SOV.balanceOf(trader)).add(await lockedSOV.getLockedBalance(trader));
+	const { receipt } = await sovryn.closeWithSwap(loan_id, trader, swap_amount, return_token_is_collateral, "0x", { from: trader });
+	await verify_sov_reward_payment(
+		receipt.rawLogs,
+		FeesEvents,
+		SOV,
+		trader,
+		loan_id,
+		sov_initial_balance,
+		2,
+		SUSD.address,
+		RBTC.address,
+		sovryn
+	);
 };
 
 const internal_test_close_margin_trade = async (
@@ -553,11 +788,15 @@ const get_estimated_margin_details = async (loanToken, collateralToken, loanSize
 module.exports = {
 	margin_trading_sending_loan_tokens,
 	margin_trading_sov_reward_payment,
+	margin_trading_sov_reward_payment_with_special_rebates,
 	margin_trading_sending_collateral_tokens,
 	margin_trading_sending_collateral_tokens_sov_reward_payment,
+	margin_trading_sending_collateral_tokens_sov_reward_payment_with_special_rebates,
 	close_complete_margin_trade,
 	close_complete_margin_trade_sov_reward_payment,
+	close_complete_margin_trade_sov_reward_payment_with_special_rebates,
 	close_partial_margin_trade,
 	close_partial_margin_trade_sov_reward_payment,
+	close_partial_margin_trade_sov_reward_payment_with_special_rebates,
 	close_complete_margin_trade_wrbtc,
 };

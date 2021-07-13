@@ -15,6 +15,7 @@ const {
 	set_demand_curve,
 	getPriceFeeds,
 	getSovryn,
+	getSOV,
 	lend_to_pool,
 	open_margin_trade_position,
 } = require("../Utils/initializer.js");
@@ -35,6 +36,7 @@ contract("ProtocolWithdrawFeeAndInterest", (accounts) => {
 		priceFeeds = await getPriceFeeds(WRBTC, SUSD, RBTC, sovryn, BZRX);
 
 		sovryn = await getSovryn(WRBTC, SUSD, RBTC, priceFeeds);
+		sov = await getSOV(sovryn, priceFeeds, SUSD, accounts);
 
 		const loanTokenLogicStandard = await getLoanTokenLogic();
 		const loanTokenLogicWrbtc = await getLoanTokenLogicWrbtc();

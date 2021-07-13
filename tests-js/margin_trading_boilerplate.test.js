@@ -21,6 +21,7 @@ const PriceFeedsLocal = artifacts.require("PriceFeedsLocal");
 const TestSovrynSwap = artifacts.require("TestSovrynSwap");
 const SwapsImplLocal = artifacts.require("SwapsImplLocal");
 const Affiliates = artifacts.require("Affiliates");
+const LockedSOVMockup = artifacts.require("LockedSOVMockup");
 
 const { BN, constants, balance, expectEvent, expectRevert } = require("@openzeppelin/test-helpers");
 const { expect } = require("hardhat");
@@ -53,6 +54,11 @@ contract("Margin Trading with Affiliates boilerplate", (accounts) => {
 		await sovryn.replaceContract((await Affiliates.new()).address);
 
 		await sovryn.setSovrynProtocolAddress(sovrynproxy.address);
+
+		const sov = await TestToken.new("SOV", "SOV", 18, web3.utils.toWei("20000", "ether"));
+		await sovryn.setProtocolTokenAddress(sov.address);
+		await sovryn.setSOVTokenAddress(sov.address);
+		await sovryn.setLockedSOVAddress((await LockedSOVMockup.new(sov.address, [accounts[0]])).address);
 
 		loanToken = await LoanToken.new(owner, loanTokenLogic.address, sovryn.address, testWrbtc.address);
 		await loanToken.initialize(doc.address, "SUSD", "SUSD");

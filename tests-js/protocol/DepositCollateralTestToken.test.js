@@ -16,6 +16,7 @@ const {
 	lend_to_pool,
 	getPriceFeeds,
 	getSovryn,
+	getSOV,
 	decodeLogs,
 	open_margin_trade_position,
 } = require("../Utils/initializer.js");
@@ -39,6 +40,7 @@ contract("ProtocolAddingMargin", (accounts) => {
 		priceFeeds = await getPriceFeeds(WRBTC, SUSD, RBTC, sovryn, BZRX);
 
 		sovryn = await getSovryn(WRBTC, SUSD, RBTC, priceFeeds);
+		sov = await getSOV(sovryn, priceFeeds, SUSD, accounts);
 
 		const loanTokenLogicStandard = await getLoanTokenLogic();
 		const loanTokenLogicWrbtc = await getLoanTokenLogicWrbtc();

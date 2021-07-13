@@ -707,7 +707,14 @@ contract LoanClosingsWith is
 			interestTime = loanLocal.endTimestamp;
 		}
 
-		_settleFeeRewardForInterestExpense(loanInterestLocal, loanLocal.id, loanParamsLocal.loanToken, loanLocal.borrower, interestTime);
+		_settleFeeRewardForInterestExpense(
+			loanInterestLocal,
+			loanLocal.id,
+			loanParamsLocal.loanToken, /// fee token
+			loanParamsLocal.collateralToken, /// pairToken (used to check if there is any special rebates or not) -- to pay fee reward
+			loanLocal.borrower,
+			interestTime
+		);
 
 		uint256 owedPerDayRefund;
 		if (closePrincipal < loanLocal.principal) {

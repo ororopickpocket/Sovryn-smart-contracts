@@ -22,6 +22,9 @@ const SwapsImplLocal = artifacts.require("SwapsImplLocal");
 
 const Affiliates = artifacts.require("Affiliates");
 
+const SOV = artifacts.require("SOV");
+const LockedSOVMockup = artifacts.require("LockedSOVMockup");
+
 const TOTAL_SUPPLY = web3.utils.toWei("1000", "ether");
 
 const { lend_to_the_pool, cash_out_from_the_pool, cash_out_from_the_pool_uint256_max_should_withdraw_total_balance } = require("./helpers");
@@ -72,6 +75,11 @@ contract("LoanTokenLending", (accounts) => {
 			swaps.address // swapsImpl
 		);
 		await sovryn.setFeesController(lender);
+
+		tokenSOV = await SOV.new(TOTAL_SUPPLY);
+		await sovryn.setLockedSOVAddress((await LockedSOVMockup.new(tokenSOV.address, [lender])).address);
+		await sovryn.setProtocolTokenAddress(tokenSOV.address);
+		await sovryn.setSOVTokenAddress(tokenSOV.address);
 
 		loanTokenLogicStandard = await LoanTokenLogicStandard.new();
 		loanToken = await LoanToken.new(lender, loanTokenLogicStandard.address, sovryn.address, rBTC.address);

@@ -256,7 +256,14 @@ contract LoanClosingsBase is LoanClosingsEvents, VaultController, InterestUser, 
 		LoanInterest storage loanInterestLocal = loanInterest[loanLocal.id];
 		LenderInterest storage lenderInterestLocal = lenderInterest[loanLocal.lender][loanParamsLocal.loanToken];
 
-		_settleFeeRewardForInterestExpense(loanInterestLocal, loanLocal.id, loanParamsLocal.loanToken, loanLocal.borrower, block.timestamp);
+		_settleFeeRewardForInterestExpense(
+			loanInterestLocal,
+			loanLocal.id,
+			loanParamsLocal.loanToken, /// fee token
+			loanParamsLocal.collateralToken, /// pairToken (used to check if there is any special rebates or not) -- to pay fee reward
+			loanLocal.borrower,
+			block.timestamp
+		);
 
 		// Handle back interest: calculates interest owned since the loan endtime passed but the loan remained open
 		uint256 backInterestTime;
@@ -605,7 +612,14 @@ contract LoanClosingsBase is LoanClosingsEvents, VaultController, InterestUser, 
 			interestTime = loanLocal.endTimestamp;
 		}
 
-		_settleFeeRewardForInterestExpense(loanInterestLocal, loanLocal.id, loanParamsLocal.loanToken, loanLocal.borrower, interestTime);
+		_settleFeeRewardForInterestExpense(
+			loanInterestLocal,
+			loanLocal.id,
+			loanParamsLocal.loanToken, /// fee token
+			loanParamsLocal.collateralToken, /// pairToken (used to check if there is any special rebates or not) -- to pay fee reward
+			loanLocal.borrower,
+			interestTime
+		);
 
 		uint256 owedPerDayRefund;
 		if (closePrincipal < loanLocal.principal) {

@@ -3,7 +3,7 @@ const { constants, BN } = require("@openzeppelin/test-helpers");
 const LoanSettingsEvents = artifacts.require("LoanSettingsEvents");
 const LoanOpeningsEvents = artifacts.require("LoanOpeningsEvents");
 
-const { getSUSD, getRBTC, getWRBTC, getBZRX, getPriceFeeds, getSovryn, decodeLogs } = require("../Utils/initializer.js");
+const { getSUSD, getRBTC, getWRBTC, getBZRX, getPriceFeeds, getSovryn, getSOV, decodeLogs } = require("../Utils/initializer.js");
 
 const wei = web3.utils.toWei;
 
@@ -21,6 +21,7 @@ contract("LoanOpeningsBorrowOrTradeFromPool", (accounts) => {
 		priceFeeds = await getPriceFeeds(WRBTC, SUSD, RBTC, sovryn, BZRX);
 
 		sovryn = await getSovryn(WRBTC, SUSD, RBTC, priceFeeds);
+		sov = await getSOV(sovryn, priceFeeds, SUSD, accounts);
 	});
 
 	const LinkDaiMarginParamsId = async () => {

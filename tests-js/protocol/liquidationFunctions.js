@@ -4,6 +4,7 @@ const { decodeLogs, verify_sov_reward_payment } = require("../Utils/initializer"
 const { increaseTime } = require("../Utils/Ethereum");
 const LoanOpenings = artifacts.require("LoanOpenings");
 const LoanClosingsEvents = artifacts.require("LoanClosingsEvents");
+const LockedSOVMockup = artifacts.require("LockedSOVMockup");
 
 const wei = web3.utils.toWei;
 const oneEth = new BN(wei("1", "ether"));
@@ -20,8 +21,12 @@ const liquidate = async (
 	rate,
 	WRBTC,
 	FeesEvents,
-	SOV
+	SOV,
+	isSpecialRebates = false
 ) => {
+	if (isSpecialRebates) {
+		await sovryn.setSpecialRebates(underlyingToken.address, collateralToken.address, wei("70", "ether"));
+	}
 	// set the demand curve to set interest rates
 	await set_demand_curve(loanToken);
 	const lender = accounts[0];
@@ -50,7 +55,9 @@ const liquidate = async (
 		await priceFeeds.setRates(collateralToken.address, underlyingToken.address, rate);
 		value = 0;
 	}
-	const sov_borrower_initial_balance = await SOV.balanceOf(borrower);
+
+	lockedSOV = await LockedSOVMockup.at(await sovryn.lockedSOVAddress());
+	const sov_borrower_initial_balance = (await SOV.balanceOf(borrower)).add(await lockedSOV.getLockedBalance(borrower));
 	await increaseTime(10 * 24 * 60 * 60); // time travel 10 days
 	// liquidate
 	const { receipt } = await sovryn.liquidate(loan_id, liquidator, loan_token_sent, { from: liquidator, value: value });
@@ -68,7 +75,18 @@ const liquidate = async (
 		priceFeeds
 	);
 	if (underlyingToken.address != WRBTC.address)
-		await verify_sov_reward_payment(receipt.rawLogs, FeesEvents, SOV, borrower, loan_id, sov_borrower_initial_balance, 1);
+		await verify_sov_reward_payment(
+			receipt.rawLogs,
+			FeesEvents,
+			SOV,
+			borrower,
+			loan_id,
+			sov_borrower_initial_balance,
+			1,
+			underlyingToken.address,
+			collateralToken.address,
+			sovryn
+		);
 };
 
 /*

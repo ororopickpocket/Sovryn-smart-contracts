@@ -66,6 +66,14 @@ contract ProtocolSettingsEvents {
 
 	event SetRebatePercent(address indexed sender, uint256 oldRebatePercent, uint256 newRebatePercent);
 
+	event SetSpecialRebates(
+		address indexed sender,
+		address indexed sourceToken,
+		address indexed destToken,
+		uint256 oldSpecialRebatesPercent,
+		uint256 newSpecialRebatesPercent
+	);
+
 	event SetProtocolAddress(address indexed sender, address indexed oldProtocol, address indexed newProtocol);
 
 	event SetMinReferralsToPayoutAffiliates(address indexed sender, uint256 oldMinReferrals, uint256 newMinReferrals);

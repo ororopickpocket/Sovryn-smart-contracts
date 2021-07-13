@@ -4,12 +4,16 @@ const { expectRevert, BN } = require("@openzeppelin/test-helpers");
 const {
 	margin_trading_sending_loan_tokens,
 	margin_trading_sov_reward_payment,
+	margin_trading_sov_reward_payment_with_special_rebates,
 	margin_trading_sending_collateral_tokens,
 	margin_trading_sending_collateral_tokens_sov_reward_payment,
+	margin_trading_sending_collateral_tokens_sov_reward_payment_with_special_rebates,
 	close_complete_margin_trade,
 	close_complete_margin_trade_sov_reward_payment,
+	close_complete_margin_trade_sov_reward_payment_with_special_rebates,
 	close_partial_margin_trade,
 	close_partial_margin_trade_sov_reward_payment,
+	close_partial_margin_trade_sov_reward_payment_with_special_rebates,
 } = require("./tradingFunctions");
 
 const FeesEvents = artifacts.require("FeesEvents");
@@ -59,7 +63,7 @@ contract("LoanTokenTrading", (accounts) => {
 		loanTokenWRBTC = await getLoanTokenWRBTC(loanTokenLogicStandard, owner, sovryn, WRBTC, SUSD);
 		await loan_pool_setup(sovryn, owner, RBTC, WRBTC, SUSD, loanToken, loanTokenWRBTC);
 
-		SOV = await getSOV(sovryn, priceFeeds, SUSD);
+		SOV = await getSOV(sovryn, priceFeeds, SUSD, accounts);
 	});
 
 	describe("Test the loan token trading logic with 2 TestTokens.", () => {
@@ -79,7 +83,8 @@ contract("LoanTokenTrading", (accounts) => {
 		*/
 		it("Test margin trading sending loan tokens", async () => {
 			await margin_trading_sending_loan_tokens(accounts, sovryn, loanToken, SUSD, RBTC, priceFeeds, false);
-			await margin_trading_sov_reward_payment(accounts, loanToken, SUSD, RBTC, SOV, FeesEvents);
+			await margin_trading_sov_reward_payment(accounts, loanToken, SUSD, RBTC, SOV, FeesEvents, sovryn);
+			await margin_trading_sov_reward_payment_with_special_rebates(accounts, loanToken, SUSD, RBTC, SOV, FeesEvents, sovryn);
 		});
 
 		/*
@@ -124,12 +129,68 @@ contract("LoanTokenTrading", (accounts) => {
 			await margin_trading_sending_collateral_tokens_sov_reward_payment(
 				accounts[2],
 				loanToken,
+				SUSD,
 				RBTC,
 				collateralTokenSent,
 				leverageAmount,
 				value,
 				FeesEvents,
-				SOV
+				SOV,
+				sovryn
+			);
+		});
+
+		/*
+		  tests margin trading sending collateral tokens as collateral.
+		  process:
+		  1. send the margin trade tx with the passed parameter (NOTE: the token transfer needs to be approved already)
+		  2. TODO verify the trade event and balances are correct
+		*/
+		it("Test margin trading sending collateral tokens with special rebates", async () => {
+			const loanSize = new BN(10000).mul(oneEth);
+			await SUSD.mint(loanToken.address, loanSize.mul(new BN(12)));
+
+			//   address loanToken, address collateralToken, uint256 newPrincipal,uint256 marginAmount, bool isTorqueLoan
+			const collateralTokenSent = await sovryn.getRequiredCollateral(
+				SUSD.address, //loanToken
+				RBTC.address, //collateralToken
+				loanSize.mul(new BN(2)), //newPrincipal loanSize*2 ethers
+				new BN(50).mul(oneEth), //leverage amount (5x leverage)
+				false //false means we are trading (true if borrowing) - the loan is stored and processed in the loanToken contract
+			);
+
+			await RBTC.mint(accounts[0], collateralTokenSent);
+			await RBTC.mint(accounts[2], collateralTokenSent);
+			// important! WRBTC is being held by the loanToken contract itself, all other tokens are transfered directly from
+			// the sender and need approval
+			await RBTC.approve(loanToken.address, collateralTokenSent);
+			await RBTC.approve(loanToken.address, collateralTokenSent, { from: accounts[2] });
+
+			const leverageAmount = new BN(5).mul(oneEth); // 5x leverage
+			const value = 0;
+			await margin_trading_sending_collateral_tokens(
+				accounts,
+				loanToken,
+				SUSD,
+				RBTC,
+				loanSize,
+				collateralTokenSent,
+				leverageAmount,
+				value,
+				priceFeeds
+			);
+
+			await margin_trading_sending_collateral_tokens_sov_reward_payment_with_special_rebates(
+				accounts[2],
+				loanToken,
+				SUSD,
+				RBTC,
+				collateralTokenSent,
+				leverageAmount,
+				value,
+				FeesEvents,
+				SOV,
+				sovryn
 			);
 		});
 		/*
@@ -188,8 +249,42 @@ contract("LoanTokenTrading", (accounts) => {
 			);
 		});
 
+		it("Test close complete margin trade sov reward payment with special rebates", async () => {
+			await close_complete_margin_trade_sov_reward_payment_with_special_rebates(
+				sovryn,
+				set_demand_curve,
+				lend_to_pool,
+				open_margin_trade_position,
+				true,
+				FeesEvents,
+				loanToken,
+				RBTC,
+				WRBTC,
+				SUSD,
+				SOV,
+				accounts
+			);
+		});
+
 		it("Test close complete margin trade sov reward payment false", async () => {
 			await close_complete_margin_trade_sov_reward_payment(
+				sovryn,
+				set_demand_curve,
+				lend_to_pool,
+				open_margin_trade_position,
+				false,
+				FeesEvents,
+				loanToken,
+				RBTC,
+				WRBTC,
+				SUSD,
+				SOV,
+				accounts
+			);
+		});
+
+		it("Test close complete margin trade sov reward payment false with special rebates", async () => {
+			await close_complete_margin_trade_sov_reward_payment_with_special_rebates(
 				sovryn,
 				set_demand_curve,
 				lend_to_pool,
@@ -251,8 +346,42 @@ contract("LoanTokenTrading", (accounts) => {
 			);
 		});
 
+		it("Test close partial margin trade sov reward payment with special rebates", async () => {
+			await close_partial_margin_trade_sov_reward_payment_with_special_rebates(
+				sovryn,
+				set_demand_curve,
+				lend_to_pool,
+				open_margin_trade_position,
+				true,
+				FeesEvents,
+				loanToken,
+				RBTC,
+				WRBTC,
+				SUSD,
+				SOV,
+				accounts
+			);
+		});
+
 		it("Test close partial margin trade sov reward payment false", async () => {
 			await close_partial_margin_trade_sov_reward_payment(
+				sovryn,
+				set_demand_curve,
+				lend_to_pool,
+				open_margin_trade_position,
+				false,
+				FeesEvents,
+				loanToken,
+				RBTC,
+				WRBTC,
+				SUSD,
+				SOV,
+				accounts
+			);
+		});
+
+		it("Test close partial margin trade sov reward payment false with special rebates", async () => {
+			await close_partial_margin_trade_sov_reward_payment_with_special_rebates(
 				sovryn,
 				set_demand_curve,
 				lend_to_pool,

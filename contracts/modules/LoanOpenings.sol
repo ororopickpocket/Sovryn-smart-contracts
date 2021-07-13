@@ -334,11 +334,15 @@ contract LoanOpenings is LoanOpeningsEvents, VaultController, InterestUser, Swap
 			require(sentValues[3] == 0, "surplus loan token");
 
 			uint256 borrowingFee = _getBorrowingFee(sentValues[4]);
+			// need to temp into local state to avoid
+			address _collateralToken = loanParamsLocal.collateralToken;
+			address _loanToken = loanParamsLocal.loanToken;
 			if (borrowingFee != 0) {
 				_payBorrowingFee(
 					sentAddresses[1], /// borrower
 					loanLocal.id,
-					loanParamsLocal.collateralToken,
+					_collateralToken, /// fee token
+					_loanToken, /// pairToken (used to check if there is any special rebates or not) -- to pay fee reward
 					borrowingFee
 				);
 
@@ -668,7 +672,14 @@ contract LoanOpenings is LoanOpeningsEvents, VaultController, InterestUser, Swap
 
 		uint256 maxLoanTerm = loanParamsLocal.maxLoanTerm;
 
-		_settleFeeRewardForInterestExpense(loanInterestLocal, loanLocal.id, loanParamsLocal.loanToken, loanLocal.borrower, block.timestamp);
+		_settleFeeRewardForInterestExpense(
+			loanInterestLocal,
+			loanLocal.id,
+			loanParamsLocal.loanToken, /// fee token
+			loanParamsLocal.collateralToken, /// pairToken (used to check if there is any special rebates or not) -- to pay fee reward
+			loanLocal.borrower,
+			block.timestamp
+		);
 
 		uint256 previousDepositRemaining;
 		if (maxLoanTerm == 0 && loanLocal.endTimestamp != 0) {

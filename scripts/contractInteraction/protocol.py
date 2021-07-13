@@ -233,3 +233,54 @@ def setSupportedToken(tokenAddress):
     sovryn = Contract.from_abi("sovryn", address=conf.contracts['sovrynProtocol'], abi=interface.ISovrynBrownie.abi, owner=conf.acct)
     data = sovryn.setSupportedTokens.encode_input([tokenAddress],[True])
     sendWithMultisig(conf.contracts['multisig'], sovryn.address, data, conf.acct)
+
+def deployTradingRebatesUsingLockedSOV():
+    # loadConfig()
+
+    sovryn = Contract.from_abi("sovryn", address=contracts['sovrynProtocol'], abi=interface.ISovrynBrownie.abi, owner=acct)
+
+    # ----------------------------- 1. Replace Protocol Settings ------------------------------
+    # replaceProtocolSettings()
+
+    # ----------------------------- 2. Set protocol token address using SOV address ------------------------------
+    # sovToken = Contract.from_abi("SOV", address=contracts["SOV"], abi=SOV.abi, owner=acct)
+    # data = sovryn.setProtocolTokenAddress.encode_input(sovToken.address)
+    # print("Set Protocol Token address in protocol settings")
+    # print(data)
+
+    # multisig = Contract.from_abi("MultiSig", address=contracts['multisig'], abi=MultiSigWallet.abi, owner=acct)
+    # tx = multisig.submitTransaction(sovryn.address,0,data)
+    # txId = tx.events["Submission"]["transactionId"]
+    # print(txId)
+    # print("protocol token address loaded:", sovryn.sovTokenAddress())
+
+    # ----------------------------- 3. Set LockedSOV address -------------------------------------------
+    # lockedSOV = Contract.from_abi("LockedSOV", address=contracts["LockedSOV"], abi=LockedSOV.abi, owner=acct)
+    # data = sovryn.setLockedSOVAddress.encode_input(lockedSOV.address)
+    # print("Set Locked SOV address in protocol settings")
+    # print(data)
+
+    # multisig = Contract.from_abi("MultiSig", address=contracts['multisig'], abi=MultiSigWallet.abi, owner=acct)
+    # tx = multisig.submitTransaction(sovryn.address,0,data)
+    # txId = tx.events["Submission"]["transactionId"]
+    # print(txId)
+    # print("lockedSOV address loaded:", sovryn.sovTokenAddress())
+
+    # ----------------------------- 4. Set default feeRebatePercent -------------------------------------------
+    setDefaultRebatesPercentage(10 * 10**18)
+
+    # TODO
+    # setSpecialRebates("sourceTokenAddress", "destTokenAddress", 10 * 10**18)
+
+    # ---------------------------- 5. Redeploy modules which implement InterestUser and SwapsUser -----------------------
+    # LoanClosingsBase
+    # LoanClosingsWith
+    replaceLoanClosings()
+    # LoanOpenings
+    replaceLoanOpenings()
+    # LoanMaintenance
+    replaceLoanMaintenance()
+    # SwapsExternal
+    redeploySwapsExternal()
+    # LoanSettings
+    replaceLoanSettings()

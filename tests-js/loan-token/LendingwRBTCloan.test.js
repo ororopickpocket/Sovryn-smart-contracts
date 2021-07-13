@@ -23,6 +23,8 @@ const TestSovrynSwap = artifacts.require("TestSovrynSwap");
 const SwapsImplLocal = artifacts.require("SwapsImplLocal");
 
 const Affiliates = artifacts.require("Affiliates");
+const SOV = artifacts.require("SOV");
+const LockedSOVMockup = artifacts.require("LockedSOVMockup");
 
 const TOTAL_SUPPLY = web3.utils.toWei("1000", "ether");
 
@@ -83,6 +85,11 @@ contract("LoanTokenLending", (accounts) => {
 			swaps.address // swapsImpl
 		);
 		await sovryn.setFeesController(lender);
+
+		tokenSOV = await SOV.new(TOTAL_SUPPLY);
+		await sovryn.setLockedSOVAddress((await LockedSOVMockup.new(tokenSOV.address, [lender])).address);
+		await sovryn.setProtocolTokenAddress(tokenSOV.address);
+		await sovryn.setSOVTokenAddress(tokenSOV.address);
 
 		loanTokenLogicWrbtc = await LoanTokenLogicWrbtc.new();
 		loanToken = await LoanToken.new(lender, loanTokenLogicWrbtc.address, sovryn.address, testWrbtc.address);
