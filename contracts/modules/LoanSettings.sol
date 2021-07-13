@@ -36,11 +36,13 @@ contract LoanSettings is State, LoanSettingsEvents {
 	 * @param target The address of the target contract.
 	 * */
 	function initialize(address target) external onlyOwner {
+		address prevModuleContractAddress = logicTargets[this.setupLoanParams.selector];
 		_setTarget(this.setupLoanParams.selector, target);
 		_setTarget(this.disableLoanParams.selector, target);
 		_setTarget(this.getLoanParams.selector, target);
 		_setTarget(this.getLoanParamsList.selector, target);
 		_setTarget(this.getTotalPrincipal.selector, target);
+		emit ProtocolModuleContractReplaced(prevModuleContractAddress, target, "LoanSettings");
 	}
 
 	/**

@@ -36,11 +36,13 @@ contract LoanOpenings is LoanOpeningsEvents, VaultController, InterestUser, Swap
 	 * @param target The address of the target contract.
 	 * */
 	function initialize(address target) external onlyOwner {
+		address prevModuleContractAddress = logicTargets[this.borrowOrTradeFromPool.selector];
 		_setTarget(this.borrowOrTradeFromPool.selector, target);
 		_setTarget(this.setDelegatedManager.selector, target);
 		_setTarget(this.getEstimatedMarginExposure.selector, target);
 		_setTarget(this.getRequiredCollateral.selector, target);
 		_setTarget(this.getBorrowAmount.selector, target);
+		emit ProtocolModuleContractReplaced(prevModuleContractAddress, target, "LoanOpenings");
 	}
 
 	/**

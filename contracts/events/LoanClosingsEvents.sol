@@ -5,6 +5,8 @@
 
 pragma solidity 0.5.17;
 
+import "./ModulesCommonEvents.sol";
+
 /**
  * @title The Loan Closing Events contract.
  * @notice This contract code comes from bZx. bZx is a protocol for tokenized
@@ -12,7 +14,7 @@ pragma solidity 0.5.17;
  *
  * This contract contains the events for loan closing operations.
  * */
-contract LoanClosingsEvents {
+contract LoanClosingsEvents is ModulesCommonEvents {
 	/// topic0: 0x6349c1a02ec126f7f4fc6e6837e1859006e90e9901635c442d29271e77b96fb6
 	event CloseWithDeposit(
 		address indexed user,

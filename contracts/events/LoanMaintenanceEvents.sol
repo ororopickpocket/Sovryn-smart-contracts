@@ -1,5 +1,7 @@
 pragma solidity 0.5.17;
 
+import "./ModulesCommonEvents.sol";
+
 /**
  * @title The Loan Maintenance Events contract.
  * @notice This contract code comes from bZx. bZx is a protocol for tokenized
@@ -7,6 +9,6 @@ pragma solidity 0.5.17;
  *
  * This contract contains the events for loan maintenance operations.
  * */
-contract LoanMaintenanceEvents {
+contract LoanMaintenanceEvents is ModulesCommonEvents {
 	event DepositCollateral(bytes32 loanId, uint256 depositAmount, uint256 rate);
 }

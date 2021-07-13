@@ -43,8 +43,10 @@ contract LoanClosingsWith is
 	}
 
 	function initialize(address target) external onlyOwner {
+		address prevModuleContractAddress = logicTargets[this.closeWithDeposit.selector];
 		_setTarget(this.closeWithDeposit.selector, target);
 		_setTarget(this.closeWithSwap.selector, target);
+		emit ProtocolModuleContractReplaced(prevModuleContractAddress, target, "LoanClosingsWith");
 	}
 
 	/**

@@ -5,6 +5,8 @@
 
 pragma solidity 0.5.17;
 
+import "./ModulesCommonEvents.sol";
+
 /**
  * @title The Protocol Settings Events contract.
  * @notice This contract code comes from bZx. bZx is a protocol for tokenized
@@ -12,7 +14,7 @@ pragma solidity 0.5.17;
  *
  * This contract contains the events for protocol settings operations.
  * */
-contract ProtocolSettingsEvents {
+contract ProtocolSettingsEvents is ModulesCommonEvents {
 	event SetPriceFeedContract(address indexed sender, address oldValue, address newValue);
 
 	event SetSwapsImplContract(address indexed sender, address oldValue, address newValue);

@@ -28,6 +28,7 @@ contract Affiliates is State, AffiliatesEvents {
 	}
 
 	function initialize(address target) external onlyOwner {
+		address prevModuleContractAddress = logicTargets[this.setAffiliatesReferrer.selector];
 		_setTarget(this.setAffiliatesReferrer.selector, target);
 		_setTarget(this.getUserNotFirstTradeFlag.selector, target);
 		_setTarget(this.getReferralsList.selector, target);
@@ -42,6 +43,7 @@ contract Affiliates is State, AffiliatesEvents {
 		_setTarget(this.getAffiliatesUserReferrer.selector, target);
 		_setTarget(this.getAffiliateRewardsHeld.selector, target);
 		_setTarget(this.getAffiliateTradingTokenFeePercent.selector, target);
+		emit ProtocolModuleContractReplaced(prevModuleContractAddress, target, "Affiliates");
 	}
 
 	modifier onlyCallableByLoanPools() {

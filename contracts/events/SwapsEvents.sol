@@ -5,6 +5,8 @@
 
 pragma solidity 0.5.17;
 
+import "./ModulesCommonEvents.sol";
+
 /**
  * @title The Swaps Events contract.
  * @notice This contract code comes from bZx. bZx is a protocol for tokenized
@@ -12,7 +14,7 @@ pragma solidity 0.5.17;
  *
  * This contract contains the events for swap operations.
  * */
-contract SwapsEvents {
+contract SwapsEvents is ModulesCommonEvents {
 	event LoanSwap(
 		bytes32 indexed loanId,
 		address indexed sourceToken,

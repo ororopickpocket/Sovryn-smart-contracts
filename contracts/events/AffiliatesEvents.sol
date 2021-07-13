@@ -5,7 +5,9 @@
 
 pragma solidity 0.5.17;
 
-contract AffiliatesEvents {
+import "./ModulesCommonEvents.sol";
+
+contract AffiliatesEvents is ModulesCommonEvents {
 	event SetAffiliatesReferrer(address indexed user, address indexed referrer);
 
 	event SetAffiliatesReferrerFail(address indexed user, address indexed referrer, bool alreadySet, bool userNotFirstTrade);
