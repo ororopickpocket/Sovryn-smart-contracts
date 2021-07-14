@@ -167,7 +167,10 @@ contract Affiliates is State, AffiliatesEvents {
 			// If referrals >= minimum, directly send all of the remain rewards to locked sov
 			// Call depositSOV() in LockedSov contract
 			// Set the affiliaterewardsheld = 0
-			affiliateRewardsHeld[referrer] = 0;
+			if (affiliateRewardsHeld[referrer] > 0) {
+				affiliateRewardsHeld[referrer] = 0;
+			}
+
 			paidReferrerBonusSovAmount = referrerBonusSovAmount.add(rewardsHeldByProtocol);
 			IERC20(sovTokenAddress).approve(lockedSOVAddress, paidReferrerBonusSovAmount);
 
