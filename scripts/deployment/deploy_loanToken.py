@@ -51,7 +51,7 @@ def deployLoanTokens(acct, sovryn, tokens):
     (contractWRBTC, loanTokenSettingsWRBTC) = deployLoanToken(acct, sovryn, tokens.wrbtc.address, "iWRBTC", "iWRBTC", [tokens.susd.address], tokens.wrbtc.address)
     print("initializing the lending pool with some tokens, so we do not run out of funds")
     contractWRBTC = Contract.from_abi("loanToken", address=contractWRBTC.address, abi=LoanTokenLogicWrbtc.abi, owner=acct)
-    contractWRBTC.mintWithBTC(acct, {'value':0.1e18})#0.1 BTC
+    contractWRBTC.mintWithBTC(acct, False, {'value':0.1e18})#0.1 BTC
     if network.show_active() == "development":
         testAffiliatesIntegration(acct, sovryn, contractWRBTC.address, tokens.wrbtc, tokens.susd, 0.0021e18, 0.0021e18)
         testDeployment(acct, sovryn, contractWRBTC.address, tokens.wrbtc, tokens.susd, 0.0021e18, 0.0021e18)

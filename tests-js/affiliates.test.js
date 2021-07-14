@@ -90,7 +90,7 @@ contract("Affiliates", (accounts) => {
 		staking = await StakingLogic.at(staking.address);
 
 		// Creating the FeeSharing Instance.
-		feeSharingProxy = await FeeSharingProxy.new(constants.ZERO_ADDRESS, staking.address);
+		feeSharingProxy = await FeeSharingProxy.new(constants.ZERO_ADDRESS, staking.address, testWrbtc.address);
 
 		// Creating the Vesting Instance.
 		vestingLogic = await VestingLogic.new();

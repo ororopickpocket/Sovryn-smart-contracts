@@ -101,7 +101,7 @@ contract("Staking", (accounts) => {
 		await protocol.setLoanPool([loanToken.address], [susd.address]);
 
 		//FeeSharingProxy
-		feeSharingProxy = await FeeSharingProxy.new(protocol.address, staking.address);
+		feeSharingProxy = await FeeSharingProxy.new(protocol.address, staking.address, wrbtc.address);
 		await protocol.setFeesController(feeSharingProxy.address);
 		await staking.setFeeSharing(feeSharingProxy.address);
 
@@ -863,7 +863,7 @@ contract("Staking", (accounts) => {
 					continue;
 				}
 
-				feeSharingProxy = await FeeSharingProxy.new(protocol.address, staking.address);
+				feeSharingProxy = await FeeSharingProxy.new(protocol.address, staking.address, wrbtc.address);
 				await staking.setFeeSharing(feeSharingProxy.address);
 
 				let duration = new BN(i * TWO_WEEKS);

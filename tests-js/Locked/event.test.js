@@ -1,4 +1,5 @@
 const SOV = artifacts.require("TestToken");
+const TestWrbtc = artifacts.require("TestWrbtc");
 const LockedSOV = artifacts.require("LockedSOV");
 const StakingLogic = artifacts.require("Staking");
 const StakingProxy = artifacts.require("StakingProxy");
@@ -42,6 +43,7 @@ contract("Locked SOV (Events)", (accounts) => {
 
 		// Creating the instance of SOV Token.
 		sov = await SOV.new("Sovryn", "SOV", 18, zero);
+		wrbtc = await TestWrbtc.new();
 
 		// Creating the Staking Instance.
 		stakingLogic = await StakingLogic.new(sov.address);
@@ -50,7 +52,7 @@ contract("Locked SOV (Events)", (accounts) => {
 		staking = await StakingLogic.at(staking.address);
 
 		// Creating the FeeSharing Instance.
-		feeSharingProxy = await FeeSharingProxy.new(zeroAddress, staking.address);
+		feeSharingProxy = await FeeSharingProxy.new(zeroAddress, staking.address, wrbtc.address);
 
 		// Creating the Vesting Instance.
 		vestingLogic = await VestingLogic.new();

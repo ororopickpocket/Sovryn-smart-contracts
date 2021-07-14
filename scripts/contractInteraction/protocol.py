@@ -211,9 +211,11 @@ def redeploySwapsExternal():
 
     sendWithMultisig(conf.contracts['multisig'], sovryn.address, data, conf.acct)
 
-def setFeesController():
+# feesControllerAddress = new feeSharingProxy address
+def setFeesController(feesControllerAddress):
+    print("Set up new fees controller")
     sovryn = Contract.from_abi("sovryn", address=conf.contracts['sovrynProtocol'], abi=interface.ISovrynBrownie.abi, owner=conf.acct)
-    data = sovryn.setFeesController.encode_input(conf.contracts['FeeSharingProxy'])
+    data = sovryn.setFeesController.encode_input(feesControllerAddress)
     print(data)
     sendWithMultisig(conf.contracts['multisig'], sovryn.address, data, conf.acct)
 
@@ -233,3 +235,18 @@ def setSupportedToken(tokenAddress):
     sovryn = Contract.from_abi("sovryn", address=conf.contracts['sovrynProtocol'], abi=interface.ISovrynBrownie.abi, owner=conf.acct)
     data = sovryn.setSupportedTokens.encode_input([tokenAddress],[True])
     sendWithMultisig(conf.contracts['multisig'], sovryn.address, data, conf.acct)
+
+def deployConversionFeeSharingToWRBTC():
+    print("Redeploy fee sharing proxy")
+    # Redeploy feeSharingProxy
+    feeSharing = conf.acct.deploy(FeeSharingProxy, conf.contracts['sovrynProtocol'], conf.contracts['Staking'], conf.contracts["WRBTC"])
+    print("Fee sharing proxy redeployed at: ", feeSharing.address)
+
+    # Redeploy protocol settings
+    replaceProtocolSettings()
+
+    # Redeploy swaps external
+    redeploySwapsExternal()
+
+    # Set Fees Controller
+    setFeesController(feeSharing.address)

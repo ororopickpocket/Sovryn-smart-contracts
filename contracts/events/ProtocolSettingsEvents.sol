@@ -53,7 +53,8 @@ contract ProtocolSettingsEvents {
 		address indexed receiver,
 		uint256 lendingAmount,
 		uint256 tradingAmount,
-		uint256 borrowingAmount
+		uint256 borrowingAmount,
+		uint256 wRBTCConverted
 	);
 
 	event WithdrawLendingFees(address indexed sender, address indexed token, address indexed receiver, uint256 amount);

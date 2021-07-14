@@ -3,6 +3,7 @@ pragma solidity ^0.5.17;
 import "./Staking/SafeMath96.sol";
 import "../openzeppelin/SafeMath.sol";
 import "../openzeppelin/SafeERC20.sol";
+import "../openzeppelin/Ownable.sol";
 import "./IFeeSharingProxy.sol";
 import "./Staking/IStaking.sol";
 
@@ -39,7 +40,7 @@ import "./Staking/IStaking.sol";
  * get pool tokens. It is planned to add the option to convert anything to rBTC
  * before withdrawing, but not yet implemented.
  * */
-contract FeeSharingProxy is SafeMath96, IFeeSharingProxy {
+contract FeeSharingProxy is SafeMath96, IFeeSharingProxy, Ownable {
 	using SafeMath for uint256;
 	using SafeERC20 for IERC20;
 
@@ -49,6 +50,8 @@ contract FeeSharingProxy is SafeMath96, IFeeSharingProxy {
 	uint256 constant FEE_WITHDRAWAL_INTERVAL = 86400;
 
 	uint32 constant MAX_CHECKPOINTS = 100;
+	
+	address public wRBTCAddress;
 
 	IProtocol public protocol;
 	IStaking public staking;
@@ -92,29 +95,48 @@ contract FeeSharingProxy is SafeMath96, IFeeSharingProxy {
 	/// @notice An event emitted when user fee get withdrawn.
 	event UserFeeWithdrawn(address indexed sender, address indexed receiver, address indexed token, uint256 amount);
 
+	/// @notice An event emitted when user set wrbtc address.
+	event SetWrbtcToken(address indexed sender, address indexed oldWRBTCAddress, address indexed newWRBTCAddress);
+
 	/* Functions */
 
-	constructor(IProtocol _protocol, IStaking _staking) public {
+	constructor(IProtocol _protocol, IStaking _staking, address _wRBTCAddress) public {
 		protocol = _protocol;
 		staking = _staking;
+		wRBTCAddress = _wRBTCAddress;
+	}
+
+	/**
+	 * @notice Set new wRBTC address
+	 *
+	 * @param newWRBTCAddress new wRBTC addres
+	 * */
+	function setWRBTCAddress(address newWRBTCAddress) external onlyOwner {
+		address oldWRBTCAddress = wRBTCAddress;
+		wRBTCAddress = newWRBTCAddress;
+		emit SetWrbtcToken(msg.sender, oldWRBTCAddress, newWRBTCAddress);
 	}
 
 	/**
 	 * @notice Withdraw fees for the given token:
 	 * lendingFee + tradingFee + borrowingFee
-	 * @param _token Address of the token
+	 * the fees will be converted in wRBTC form, and then will be transferred to wRBTC loan pool
+	 *
+	 * @param _tokens array address of the token
 	 * */
-	function withdrawFees(address _token) public {
-		require(_token != address(0), "FeeSharingProxy::withdrawFees: invalid address");
+	function withdrawFees(address[] memory _tokens) public {
+		for (uint256 i = 0; i < _tokens.length; i++) {
+ 			require(_tokens[i] != address(0), "FeeSharingProxy::withdrawFees: invalid address");
+		}
 
-		address loanPoolToken = protocol.underlyingToLoanPool(_token);
-		require(loanPoolToken != address(0), "FeeSharingProxy::withdrawFees: loan token not found");
+		address loanPoolToken = protocol.underlyingToLoanPool(wRBTCAddress);
+		require(loanPoolToken != address(0), "FeeSharingProxy::withdrawFees: loan wRBTC not found");
 
-		uint256 amount = protocol.withdrawFees(_token, address(this));
+		uint256 amount = protocol.withdrawFees(_tokens, address(this));
 		require(amount > 0, "FeeSharingProxy::withdrawFees: no tokens to withdraw");
 
 		/// @dev TODO can be also used - function addLiquidity(IERC20Token _reserveToken, uint256 _amount, uint256 _minReturn)
-		IERC20(_token).approve(loanPoolToken, amount);
+		IERC20(wRBTCAddress).approve(loanPoolToken, amount);
 		uint256 poolTokenAmount = ILoanToken(loanPoolToken).mint(address(this), amount);
 
 		/// @notice Update unprocessed amount of tokens
@@ -179,6 +201,8 @@ contract FeeSharingProxy is SafeMath96, IFeeSharingProxy {
 	 * SOV and/or staking for longer will increase your share of the fees
 	 * generated, meaning you will earn more from staking.
 	 *
+	 * This function will directly burnToBTC and use the msg.sender (user) as the receiver
+	 *
 	 * @param _loanPoolToken Address of the pool token.
 	 * @param _maxCheckpoints Maximum number of checkpoints to be processed.
 	 * @param _receiver The receiver of tokens or msg.sender
@@ -191,6 +215,9 @@ contract FeeSharingProxy is SafeMath96, IFeeSharingProxy {
 		/// @dev Prevents processing all checkpoints because of block gas limit.
 		require(_maxCheckpoints > 0, "FeeSharingProxy::withdraw: _maxCheckpoints should be positive");
 
+		address loanPoolTokenWRBTC = protocol.underlyingToLoanPool(wRBTCAddress);
+		require(loanPoolTokenWRBTC != address(0), "FeeSharingProxy::withdrawFees: loan wRBTC not found");
+
 		address user = msg.sender;
 		if (_receiver == address(0)) {
 			_receiver = msg.sender;
@@ -201,8 +228,14 @@ contract FeeSharingProxy is SafeMath96, IFeeSharingProxy {
 		(amount, end) = _getAccumulatedFees(user, _loanPoolToken, _maxCheckpoints);
 
 		processedCheckpoints[user][_loanPoolToken] = end;
-
-		require(IERC20(_loanPoolToken).transfer(user, amount), "FeeSharingProxy::withdraw: withdrawal failed");
+		
+		if(loanPoolTokenWRBTC == _loanPoolToken) {
+			// We will change, so that feeSharingProxy will directly burn then loanToken (IWRBTC) to rbtc and send to the user --- by call burnToBTC function
+			uint256 loanAmountPaid = ILoanTokenWRBTC(_loanPoolToken).burnToBTC(_receiver, amount, false);
+		} else {
+			// Previously it directly send the loanToken to the user
+			require(IERC20(_loanPoolToken).transfer(user, amount), "FeeSharingProxy::withdraw: withdrawal failed");
+		}
 
 		emit UserFeeWithdrawn(msg.sender, _receiver, _loanPoolToken, amount);
 	}
@@ -343,11 +376,22 @@ contract FeeSharingProxy is SafeMath96, IFeeSharingProxy {
 /* Interfaces */
 
 interface IProtocol {
-	function withdrawFees(address token, address receiver) external returns (uint256);
+	/**
+	 *
+	 * @param tokens The array address of the token instance.
+	 * @param receiver The address of the withdrawal recipient.
+	 *
+	 * @return The withdrawn total amount in wRBTC
+	 * */
+	function withdrawFees(address[] calldata tokens, address receiver) external returns (uint256);
 
 	function underlyingToLoanPool(address token) external returns (address);
 }
 
 interface ILoanToken {
 	function mint(address receiver, uint256 depositAmount) external returns (uint256 mintAmount);
+}
+
+interface ILoanTokenWRBTC {
+	function burnToBTC(address receiver, uint256 burnAmount, bool useLM) external returns (uint256 loanAmountPaid);
 }

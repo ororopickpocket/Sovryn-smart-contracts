@@ -8,6 +8,7 @@ const StakingLogic = artifacts.require("Staking");
 const StakingProxy = artifacts.require("StakingProxy");
 const SOV_ABI = artifacts.require("SOV");
 const TestToken = artifacts.require("TestToken");
+const TestWrbtc = artifacts.require("TestWrbtc");
 const FeeSharingProxy = artifacts.require("FeeSharingProxyMockup");
 const VestingLogic = artifacts.require("VestingLogic");
 const VestingFactory = artifacts.require("VestingFactory");
@@ -98,6 +99,7 @@ contract("OriginInvestorsClaim", (accounts) => {
 		amount3 = amount1.muln(5);
 		amounts = [amount1, amount2, amount3];
 
+		wrbtc = await TestWrbtc.new();
 		SOV = await SOV_ABI.new(TOTAL_SUPPLY);
 		cSOV1 = await TestToken.new("cSOV1", "cSOV1", 18, TOTAL_SUPPLY);
 		cSOV2 = await TestToken.new("cSOV2", "cSOV2", 18, TOTAL_SUPPLY);
@@ -107,7 +109,7 @@ contract("OriginInvestorsClaim", (accounts) => {
 		await staking.setImplementation(stakingLogic.address);
 		staking = await StakingLogic.at(staking.address);
 
-		feeSharingProxy = await FeeSharingProxy.new(ZERO_ADDRESS, staking.address);
+		feeSharingProxy = await FeeSharingProxy.new(ZERO_ADDRESS, staking.address, wrbtc.address);
 
 		vestingLogic = await VestingLogic.new();
 		vestingFactory = await VestingFactory.new(vestingLogic.address);
